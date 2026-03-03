@@ -1,0 +1,170 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Ministry Dashboard {% endblock %}
+
+{% block body_class %} sidebar-mini {% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <style>
+    .alert-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      width: 70%;
+    }
+    .bg-church-gradient {
+      background: linear-gradient(45deg, #4e085e, #8e24aa); /* Anglican Purple Theme */
+      color: white;
+    }
+  </style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="content-wrapper">
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0">Ministry Dashboard</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="/index">Home</a></li>
+            <li class="breadcrumb-item active">Dashboard</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="content">
+    <div class="container-fluid">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alert-container" id="flashMessageContainer">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible shadow-lg">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                <h5><i class="icon fas fa-info-circle"></i> Notification</h5>
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="callout callout-info bg-church-gradient border-0 shadow-sm">
+        <h5><i class="fas fa-cross mr-2"></i> Welcome, {{ session.get('first_name', 'Servant') }}!</h5>
+        <p>Diocese/Parish: <b>{{ session.get('assigned_db', 'General').replace('_', ' ').title() }}</b> | 
+           Role: <b>{{ session.get('role', 'User').replace('_', ' ').title() }}</b></p>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-info shadow-sm">
+            <div class="inner">
+              <h3>{{ pwd_count or '0' }}</h3>
+              <p>Total PWD Records</p>
+            </div>
+            <div class="icon"><i class="fas fa-wheelchair"></i></div>
+            <a href="/manage_pwds" class="small-box-footer">View Registry <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-success shadow-sm">
+            <div class="inner">
+              <h3>{{ coordinator_count or '0' }}</h3>
+              <p>Coordinators</p>
+            </div>
+            <div class="icon"><i class="fas fa-user-tie"></i></div>
+            <a href="/manage_coordinators" class="small-box-footer">View Team <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-warning shadow-sm">
+            <div class="inner">
+              <h3>{{ parish_count or '0' }}</h3>
+              <p>Active Parishes</p>
+            </div>
+            <div class="icon"><i class="fas fa-church"></i></div>
+            <a href="/manage_dioceses" class="small-box-footer">View Hierarchy <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-danger shadow-sm">
+            <div class="inner">
+              <h3>{{ support_value or '0' }}</h3>
+              <p>Support (UGX M)</p>
+            </div>
+            <div class="icon"><i class="fas fa-hand-holding-heart"></i></div>
+            <a href="/financial_reports" class="small-box-footer">Financials <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <h5 class="mt-4 mb-2"><i class="fas fa-bolt mr-2 text-warning"></i> Ministry Quick Actions</h5>
+      
+      <div class="row">
+        <div class="col-md-4 col-sm-6 col-12">
+          <div class="info-box shadow-sm">
+            <span class="info-box-icon bg-primary"><i class="fas fa-user-plus"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">New Registration</span>
+              <a href="/add_pwd" class="font-weight-bold">Add PWD Record <i class="fas fa-arrow-right ml-1"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6 col-12">
+          <div class="info-box shadow-sm">
+            <span class="info-box-icon bg-success"><i class="fas fa-check-double"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Attendance</span>
+              <a href="/attendance" class="font-weight-bold">Mark Attendance <i class="fas fa-arrow-right ml-1"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6 col-12">
+          <div class="info-box shadow-sm">
+            <span class="info-box-icon bg-purple" style="background-color: #6f42c1 !important; color: white;">
+              <i class="fas fa-donate"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">Support Tracking</span>
+              <a href="/support_management" class="font-weight-bold">Record Aid Provided <i class="fas fa-arrow-right ml-1"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6 col-12">
+          <div class="info-box shadow-sm">
+            <span class="info-box-icon bg-warning"><i class="fas fa-user-shield"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Access Control</span>
+              <a href="/manage_users" class="font-weight-bold">Manage Permissions <i class="fas fa-arrow-right ml-1"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    $(document).ready(function() {
+      // Auto-hide alerts after 4s
+      setTimeout(function() {
+        $('#flashMessageContainer').fadeOut('slow');
+      }, 4000);
+    });
+  </script>
+{% endblock javascripts %}
