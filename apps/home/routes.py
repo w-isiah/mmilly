@@ -41,7 +41,7 @@ def index():
 
             # 2. Fetch Registry Statistics
             # Count PWD beneficiaries
-            cursor.execute("SELECT COUNT(*) as count FROM PWD")
+            cursor.execute("SELECT COUNT(*) as count FROM pwd")
             pwd_count = cursor.fetchone()['count']
 
             # Count Ministry Coordinators
@@ -49,7 +49,7 @@ def index():
             coordinator_count = cursor.fetchone()['count']
 
             # Count Parishes/Churches
-            cursor.execute("SELECT COUNT(*) as count FROM Church")
+            cursor.execute("SELECT COUNT(*) as count FROM church")
             parish_count = cursor.fetchone()['count']
 
             # 3. Define Management Roles
