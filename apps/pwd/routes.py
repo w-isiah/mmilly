@@ -39,7 +39,7 @@ def manage_pwds():
                 SUM(CASE WHEN Gender = 'Male' THEN 1 ELSE 0 END) as male_count,
                 SUM(CASE WHEN Gender = 'Female' THEN 1 ELSE 0 END) as female_count,
                 COUNT(DISTINCT ChurchID) as active_churches
-            FROM PWD
+            FROM pwd
             WHERE IsActive = TRUE
         ''')
         stats = cursor.fetchone()
@@ -52,9 +52,9 @@ def manage_pwds():
                 ch.ChurchName, 
                 ch.Parish,
                 CONCAT(c.Title, ' ', c.FirstName, ' ', c.LastName) as CoordinatorName
-            FROM PWD p
-            JOIN Church ch ON p.ChurchID = ch.ChurchID
-            JOIN Coordinator c ON ch.CoordinatorID = c.CoordinatorID
+            FROM pwd p
+            JOIN church ch ON p.ChurchID = ch.ChurchID
+            JOIN coordinator c ON ch.CoordinatorID = c.CoordinatorID
             WHERE p.IsActive = TRUE
             ORDER BY p.RegistrationDate DESC
         ''')
@@ -65,8 +65,8 @@ def manage_pwds():
         cursor.execute('''
             SELECT ch.ChurchID, ch.ChurchName, ch.Archdeaconry, 
                    CONCAT(c.FirstName, ' ', c.LastName) as CoordinatorName
-            FROM Church ch
-            JOIN Coordinator c ON ch.CoordinatorID = c.CoordinatorID
+            FROM church ch
+            JOIN coordinator c ON ch.CoordinatorID = c.CoordinatorID
             WHERE ch.IsActive = TRUE
             ORDER BY ch.ChurchName ASC
         ''')
@@ -118,7 +118,7 @@ def add_pwd():
         # Note: We don't need to specify the CoordinatorID here because 
         # it is already linked to the ChurchID in the 'Church' table.
         cursor.execute('''
-            INSERT INTO PWD 
+            INSERT INTO pwd 
                 (FirstName, LastName, Gender, DateOfBirth, ChurchID, DisabilityType, PhoneNumber, RegistrationDate)
             VALUES (%s, %s, %s, %s, %s, %s, %s, CURDATE())
         ''', (first_name, last_name, gender, dob, church_id, disability_type, phone))
@@ -160,7 +160,7 @@ def edit_pwd(pwd_id):
         # 2. Update the PWD record
         # Note: We update ChurchID, which links them to a specific Area Coordinator
         sql = '''
-            UPDATE PWD 
+            UPDATE pwd 
             SET FirstName = %s, 
                 LastName = %s, 
                 Gender = %s, 
@@ -194,7 +194,7 @@ def delete_pwd(pwd_id):
 
     try:
         # We are deleting from the PWD table using PWDID
-        cursor.execute('DELETE FROM PWD WHERE PWDID = %s', (pwd_id,))
+        cursor.execute('DELETE FROM pwd WHERE PWDID = %s', (pwd_id,))
         connection.commit()
         
         if cursor.rowcount > 0:

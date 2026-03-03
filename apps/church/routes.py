@@ -40,7 +40,7 @@ def manage_churches():
                 SUM(CASE WHEN IsActive = TRUE THEN 1 ELSE 0 END) as active_count,
                 COUNT(DISTINCT Archdeaconry) as total_archdeaconries,
                 COUNT(DISTINCT District) as total_districts
-            FROM Church
+            FROM church
         ''')
         stats = cursor.fetchone()
 
@@ -51,8 +51,8 @@ def manage_churches():
                 ch.*, 
                 CONCAT(c.Title, ' ', c.FirstName, ' ', c.LastName) as CoordinatorName,
                 c.PhoneNumber as CoordinatorPhone
-            FROM Church ch
-            JOIN Coordinator c ON ch.CoordinatorID = c.CoordinatorID
+            FROM church ch
+            JOIN coordinator c ON ch.CoordinatorID = c.CoordinatorID
             ORDER BY ch.CreatedAt DESC
         ''')
         churches = cursor.fetchall()
@@ -65,7 +65,7 @@ def manage_churches():
                 FirstName, 
                 LastName, 
                 Title
-            FROM Coordinator 
+            FROM coordinator 
             ORDER BY LastName ASC
         ''')
         coordinators = cursor.fetchall()
@@ -117,7 +117,7 @@ def add_church():
         # 3. Insert the new Church record
         # We include IsActive (default TRUE) and CreatedAt (default CURRENT_TIMESTAMP)
         cursor.execute('''
-            INSERT INTO Church 
+            INSERT INTO church 
                 (ChurchName, Archdeaconry, Parish, District, CoordinatorID, IsActive)
             VALUES (%s, %s, %s, %s, %s, TRUE)
         ''', (church_name, archdeaconry, parish, district, coordinator_id))
@@ -157,7 +157,7 @@ def edit_church(church_id):
     try:
         # 2. Update the Church record
         cursor.execute('''
-            UPDATE Church 
+            UPDATE church 
             SET ChurchName = %s, 
                 Archdeaconry = %s, 
                 Parish = %s, 
@@ -191,7 +191,7 @@ def delete_church(church_id):
     try:
         # The database will prevent deletion if PWD beneficiaries 
         # are still linked to this ChurchID (RESTRICT constraint).
-        cursor.execute('DELETE FROM Church WHERE ChurchID = %s', (church_id,))
+        cursor.execute('DELETE FROM church WHERE ChurchID = %s', (church_id,))
         connection.commit()
         
         if cursor.rowcount > 0:

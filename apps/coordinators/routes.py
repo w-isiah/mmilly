@@ -35,12 +35,12 @@ def manage_coordinators():
                 COUNT(CoordinatorID) as total_staff,
                 SUM(CASE WHEN IsActive = TRUE THEN 1 ELSE 0 END) as active_staff,
                 SUM(CASE WHEN Position = 'Senior Coordinator' THEN 1 ELSE 0 END) as senior_count
-            FROM Coordinator
+            FROM coordinator
         ''')
         stats = cursor.fetchone()
 
         # 2. Fetch Coordinator List
-        cursor.execute('SELECT * FROM Coordinator ORDER BY LastName ASC')
+        cursor.execute('SELECT * FROM coordinator ORDER BY LastName ASC')
         coordinators = cursor.fetchall()
 
         # 3. Position Options (Matching SQL ENUM)
@@ -104,7 +104,7 @@ def add_coordinator():
     try:
         with connection.cursor() as cursor:
             sql = '''
-                INSERT INTO Coordinator 
+                INSERT INTO coordinator 
                     (Title, FirstName, LastName, PhoneNumber, AlternativePhone, Email, Position, DateJoined, Notes)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
@@ -155,7 +155,7 @@ def edit_coordinator(coord_id):
 
     try:
         cursor.execute('''
-            UPDATE Coordinator 
+            UPDATE coordinator 
             SET Title = %s, FirstName = %s, LastName = %s, 
                 PhoneNumber = %s, Email = %s, Position = %s, IsActive = %s
             WHERE CoordinatorID = %s
@@ -179,7 +179,7 @@ def delete_coordinator(coord_id):
     cursor = connection.cursor()
 
     try:
-        cursor.execute('DELETE FROM Coordinator WHERE CoordinatorID = %s', (coord_id,))
+        cursor.execute('DELETE FROM coordinator WHERE CoordinatorID = %s', (coord_id,))
         connection.commit()
         
         if cursor.rowcount > 0:
