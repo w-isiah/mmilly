@@ -88,6 +88,11 @@ def manage_churches():
 
 
 
+
+
+
+
+
 @blueprint.route('/add_church', methods=['POST'])
 def add_church():
     """Registers a new Church and links it to a Coordinator."""
@@ -103,7 +108,7 @@ def add_church():
     # CoordinatorID is NOT NULL in your schema, so it is strictly required
     if not all([church_name, archdeaconry, parish, district, coordinator_id]):
         flash("Missing required fields. Please ensure Church Name, Location, and Coordinator are provided.", "warning")
-        return redirect(url_for('home_blueprint.manage_churches'))
+        return redirect(url_for('church_blueprint.manage_churches'))
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -129,7 +134,7 @@ def add_church():
         connection.close()
 
     # Redirect back to the church directory list
-    return redirect(url_for('home_blueprint.manage_churches'))
+    return redirect(url_for('church_blueprint.manage_churches'))
 
 
 
@@ -172,7 +177,7 @@ def edit_church(church_id):
         connection.close()
 
     # 3. Redirect back to the church management dashboard
-    return redirect(url_for('home_blueprint.manage_churches'))
+    return redirect(url_for('church_blueprint.manage_churches'))
 
 
 
@@ -202,7 +207,7 @@ def delete_church(church_id):
         cursor.close()
         connection.close()
 
-    return redirect(url_for('home_blueprint.manage_churches'))
+    return redirect(url_for('church_blueprint.manage_churches'))
 
     
     

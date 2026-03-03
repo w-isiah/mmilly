@@ -9,8 +9,9 @@
             <div class="row align-items-center">
                 <div class="col-md-6">
                     <h1 class="m-0 text-dark font-weight-bold">
-                        <i class="fas fa-list-ul mr-2 text-primary"></i>PWD Registry List
+                        <i class="fas fa-wheelchair mr-2 text-primary"></i>PWD Registry List
                     </h1>
+                    <p class="text-muted mb-0"><small>Managing Person with Disabilities (PWD) Database</small></p>
                 </div>
                 <div class="col-md-6 text-right">
                     <div class="d-inline-block mr-2">
@@ -40,7 +41,6 @@
                                     <th>Beneficiary Name</th>
                                     <th>Gender</th>
                                     <th>Church & Location</th>
-                                    <th>Coordinator</th>
                                     <th>Disability</th>
                                     <th class="text-center">Contact</th>
                                     <th class="text-right pr-4">Actions</th>
@@ -49,7 +49,10 @@
                             <tbody>
                                 {% for person in pwds %}
                                 <tr>
-                                    <td class="font-weight-bold">{{ person.FirstName }} {{ person.LastName }}</td>
+                                    <td class="font-weight-bold">
+                                        {% if person.Title %}<span class="text-muted small">{{ person.Title }}.</span> {% endif %}
+                                        {{ person.FirstName }} {{ person.LastName }}
+                                    </td>
                                     <td>
                                         {% if person.Gender == 'Male' %}
                                             <span class="badge badge-info"><i class="fas fa-mars mr-1"></i>Male</span>
@@ -61,18 +64,24 @@
                                         <div class="font-weight-bold text-sm">{{ person.ChurchName }}</div>
                                         <small class="text-muted">{{ person.Parish }}</small>
                                     </td>
-                                    <td><span class="text-sm">{{ person.CoordinatorName }}</span></td>
                                     <td><span class="badge border text-secondary">{{ person.DisabilityType }}</span></td>
-                                    <td class="text-center">{{ person.PhoneNumber or '---' }}</td>
+                                    <td class="text-center text-sm">{{ person.PhoneNumber or '---' }}</td>
                                     <td class="text-right pr-4">
-                                        <div class="btn-group">
-                                            <button class="btn btn-xs btn-outline-info mr-1" data-toggle="modal" data-target="#editPWDModal{{ person.PWDID }}">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-info" data-toggle="modal" data-target="#editPWDModal{{ person.PWDID }}" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button class="btn btn-xs btn-outline-danger" data-toggle="modal" data-target="#deletePWDModal{{ person.PWDID }}">
+                                            <button class="btn btn-outline-danger" data-toggle="modal" data-target="#deletePWDModal{{ person.PWDID }}" title="Delete">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="fas fa-folder-open fa-3x mb-3 opacity-50"></i>
+                                        <p>No PWD records found.</p>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -89,18 +98,23 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content border-0 shadow-lg">
             <form action="{{ url_for('pwd_blueprint.add_pwd') }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title font-weight-bold"><i class="fas fa-user-plus mr-2"></i>New PWD Registration</h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="small font-weight-bold">FIRST NAME</label>
+                        <div class="col-md-2 form-group">
+                            <label class="small font-weight-bold">TITLE</label>
+                            <input type="text" name="title" class="form-control" placeholder="Mr.">
+                        </div>
+                        <div class="col-md-5 form-group">
+                            <label class="small font-weight-bold">FIRST NAME <span class="text-danger">*</span></label>
                             <input type="text" name="first_name" class="form-control" required>
                         </div>
-                        <div class="col-md-6 form-group">
-                            <label class="small font-weight-bold">LAST NAME</label>
+                        <div class="col-md-5 form-group">
+                            <label class="small font-weight-bold">LAST NAME <span class="text-danger">*</span></label>
                             <input type="text" name="last_name" class="form-control" required>
                         </div>
                     </div>
@@ -117,29 +131,35 @@
                             <input type="text" name="phone" class="form-control" placeholder="07...">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label class="small font-weight-bold">ASSIGNED CHURCH</label>
-                        <select name="church_id" class="form-control select2" style="width: 100%;" required>
-                            <option value="">-- Select Church --</option>
-                            {% for ch in churches %}
-                            <option value="{{ ch.ChurchID }}">{{ ch.ChurchName }} ({{ ch.Parish }})</option>
-                            {% endfor %}
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold">ASSIGNED CHURCH</label>
+                            <select name="church_id" class="form-control" required>
+                                <option value="">-- Select Church --</option>
+                                {% for ch in churches %}
+                                <option value="{{ ch.ChurchID }}">{{ ch.ChurchName }} ({{ ch.Parish }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold">DISABILITY CATEGORY</label>
+                            <select name="disability_type" class="form-control" required>
+                                <option value="Physical">Physical</option>
+                                <option value="Visual">Visual</option>
+                                <option value="Hearing">Hearing</option>
+                                <option value="Intellectual">Intellectual</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label class="small font-weight-bold">DISABILITY CATEGORY</label>
-                        <select name="disability_type" class="form-control" required>
-                            <option value="Physical">Physical</option>
-                            <option value="Visual">Visual</option>
-                            <option value="Hearing">Hearing</option>
-                            <option value="Intellectual">Intellectual</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <label class="small font-weight-bold">NOTES / REMARKS</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Any additional information..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-link text-muted" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4">Complete Registration</button>
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">Complete Registration</button>
                 </div>
             </form>
         </div>
@@ -149,27 +169,32 @@
 {% for person in pwds %}
 <div class="modal fade" id="editPWDModal{{ person.PWDID }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
-        <form action="{{ url_for('home_blueprint.edit_pwd', pwd_id=person.PWDID) }}" method="POST">
-            <div class="modal-content">
+        <form action="{{ url_for('pwd_blueprint.edit_pwd', pwd_id=person.PWDID) }}" method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title">Update {{ person.FirstName }}</h5>
+                    <h5 class="modal-title"><i class="fas fa-edit mr-2"></i>Update {{ person.FirstName }}</h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 form-group">
-                            <label>First Name</label>
+                            <label class="small font-weight-bold">FIRST NAME</label>
                             <input type="text" name="first_name" class="form-control" value="{{ person.FirstName }}" required>
                         </div>
                         <div class="col-md-6 form-group">
-                            <label>Last Name</label>
+                            <label class="small font-weight-bold">LAST NAME</label>
                             <input type="text" name="last_name" class="form-control" value="{{ person.LastName }}" required>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">PHONE</label>
+                        <input type="text" name="phone" class="form-control" value="{{ person.PhoneNumber }}">
                     </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-info">Save Changes</button>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-info btn-sm px-4">Save Changes</button>
                 </div>
             </div>
         </form>
@@ -178,13 +203,17 @@
 
 <div class="modal fade" id="deletePWDModal{{ person.PWDID }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-sm" role="document">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow">
             <div class="modal-body text-center py-4">
-                <i class="fas fa-exclamation-circle text-danger fa-3x mb-3"></i>
-                <p>Delete <strong>{{ person.FirstName }}</strong>?</p>
-                <form action="{{ url_for('home_blueprint.delete_pwd', pwd_id=person.PWDID) }}" method="POST">
-                    <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">No</button>
-                    <button type="submit" class="btn btn-danger btn-sm px-3">Confirm</button>
+                <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                <h5 class="font-weight-bold">Delete Record?</h5>
+                <p class="text-muted small">Are you sure you want to remove <strong>{{ person.FirstName }} {{ person.LastName }}</strong> from the registry?</p>
+                <form action="{{ url_for('pwd_blueprint.delete_pwd', pwd_id=person.PWDID) }}" method="POST">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-light btn-sm mr-2" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger btn-sm px-3">Confirm Delete</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -197,6 +226,7 @@
 {% block javascripts %}
 <script>
     $(document).ready(function(){
+      // Improved Real-time Search
       $("#tableSearch").on("keyup", function() {
         var value = $(this).val().toLowerCase();
         $("#pwdTable tbody tr").filter(function() {

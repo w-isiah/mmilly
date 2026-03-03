@@ -69,14 +69,16 @@ from datetime import datetime
 
 @blueprint.route('/add_coordinator', methods=['POST'])
 def add_coordinator():
-    """Registers a new staff member."""
+    """Registers a new staff member with automatic Kampala timestamp."""
+    
     # 1. Capture and Clean Data
-    # .strip() prevents leading/trailing spaces from breaking searches
     first_name = request.form.get('first_name', '').strip()
     last_name  = request.form.get('last_name', '').strip()
     phone      = request.form.get('phone', '').strip()
     position   = request.form.get('position')
-    date_joined = request.form.get('date_joined')
+    
+    # Generate the timestamp using your Kampala function
+    kampala_now = get_kampala_time()
 
     # Optional fields
     data = {
@@ -85,14 +87,14 @@ def add_coordinator():
         'last_name':   last_name,
         'phone':       phone,
         'alt_phone':   request.form.get('alt_phone', '').strip() or None,
-        'email':       request.form.get('email', '').strip().lower() or None, # Store email in lowercase
+        'email':       request.form.get('email', '').strip().lower() or None,
         'position':    position,
-        'date_joined': date_joined,
+        'date_joined': kampala_now, # Set to Kampala Time
         'notes':       request.form.get('notes', '').strip() or None
     }
 
-    # 2. Validation
-    required_fields = ['first_name', 'last_name', 'phone', 'position', 'date_joined']
+    # 2. Validation (Removed date_joined from requirements as it's now automatic)
+    required_fields = ['first_name', 'last_name', 'phone', 'position']
     if not all(data[field] for field in required_fields):
         flash("Registration failed: Missing required fields marked with (*).", "warning")
         return redirect(url_for('coordinators_blueprint.manage_coordinators'))
@@ -108,7 +110,9 @@ def add_coordinator():
             '''
             cursor.execute(sql, (
                 data['title'], data['first_name'], data['last_name'], data['phone'],
-                data['alt_phone'], data['email'], data['position'], data['date_joined'], data['notes']
+                data['alt_phone'], data['email'], data['position'], 
+                data['date_joined'], # Inserted as Africa/Kampala time
+                data['notes']
             ))
         
         connection.commit()
@@ -116,7 +120,6 @@ def add_coordinator():
         
     except Exception as e:
         connection.rollback()
-        # Log the error here for the developer, show a clean message to the user
         print(f"Error occurred: {e}") 
         flash("A database error occurred. Please ensure the email is unique.", "danger")
         
@@ -124,7 +127,6 @@ def add_coordinator():
         connection.close()
 
     return redirect(url_for('coordinators_blueprint.manage_coordinators'))
-
 
 
 

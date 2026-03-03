@@ -90,6 +90,7 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content border-0 shadow-lg">
             <form action="{{ url_for('church_blueprint.add_church') }}" method="POST">
+                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title font-weight-bold"><i class="fas fa-plus-circle mr-2"></i>Register New Church</h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
@@ -137,7 +138,8 @@
 {% for church in churches %}
 <div class="modal fade" id="editChurchModal{{ church.ChurchID }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
-        <form action="{{ url_for('home_blueprint.edit_church', church_id=church.ChurchID) }}" method="POST">
+        <form action="{{ url_for('church_blueprint.edit_church', church_id=church.ChurchID) }}" method="POST">
+             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="modal-content">
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title">Edit {{ church.ChurchName }}</h5>
@@ -174,7 +176,8 @@
             <div class="modal-body text-center py-4">
                 <i class="fas fa-trash text-danger fa-3x mb-3"></i>
                 <p>Remove <strong>{{ church.ChurchName }}</strong> from directory?</p>
-                <form action="{{ url_for('home_blueprint.delete_church', church_id=church.ChurchID) }}" method="POST">
+                <form action="{{ url_for('church_blueprint.delete_church', church_id=church.ChurchID) }}" method="POST">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">No</button>
                     <button type="submit" class="btn btn-danger btn-sm px-3">Delete</button>
                 </form>

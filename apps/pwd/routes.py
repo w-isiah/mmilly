@@ -108,7 +108,7 @@ def add_pwd():
     # 2. Basic validation
     if not all([first_name, last_name, gender, church_id, disability_type]):
         flash("Missing required fields. Please ensure Name, Gender, Church, and Disability are selected.", "warning")
-        return redirect(url_for('home_blueprint.manage_pwd'))
+        return redirect(url_for('pwd_blueprint.manage_pwd'))
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -133,8 +133,7 @@ def add_pwd():
         cursor.close()
         connection.close()
 
-    return redirect(url_for('home_blueprint.manage_pwd'))
-
+    return redirect(url_for('pwd_blueprint.manage_pwds'))
 
 
 
@@ -142,25 +141,25 @@ def add_pwd():
 
 @blueprint.route('/edit-pwd/<int:pwd_id>', methods=['POST'])
 def edit_pwd(pwd_id):
-    """Updates an existing PWD beneficiary's record based on pwd_id."""
+    """Updates an existing PWD beneficiary's record."""
     
-    # 1. Capture updated data from the form
-    first_name      = request.form.get('first_name')
-    last_name       = request.form.get('last_name')
+    # 1. Capture and Clean Data
+    first_name      = request.form.get('first_name', '').strip()
+    last_name       = request.form.get('last_name', '').strip()
     gender          = request.form.get('gender')
-    dob             = request.form.get('dob') or None
+    # If your form doesn't have DOB anymore, this can be removed or kept as optional
+    dob             = request.form.get('dob') or None 
     church_id       = request.form.get('church_id')
     disability_type = request.form.get('disability_type')
-    phone           = request.form.get('phone')
+    phone           = request.form.get('phone', '').strip()
 
     connection = get_db_connection()
     cursor = connection.cursor()
 
     try:
         # 2. Update the PWD record
-        # Note: We update ChurchID, which effectively updates the 
-        # Area Coordinator linked to this person.
-        cursor.execute('''
+        # Note: We update ChurchID, which links them to a specific Area Coordinator
+        sql = '''
             UPDATE PWD 
             SET FirstName = %s, 
                 LastName = %s, 
@@ -170,53 +169,50 @@ def edit_pwd(pwd_id):
                 DisabilityType = %s, 
                 PhoneNumber = %s
             WHERE PWDID = %s
-        ''', (first_name, last_name, gender, dob, church_id, disability_type, phone, pwd_id))
+        '''
+        cursor.execute(sql, (first_name, last_name, gender, dob, church_id, disability_type, phone, pwd_id))
         
         connection.commit()
         flash(f"Record for {first_name} {last_name} updated successfully.", "success")
             
     except Exception as e:
         connection.rollback()
-        # Useful if you add a unique constraint on phone numbers or IDs later
+        print(f"Update Error (Kampala Time {get_kampala_time()}): {e}")
         flash(f"Error: Could not update beneficiary. {str(e)}", "danger")
     finally:
         cursor.close()
         connection.close()
 
-    # 3. Redirect back to the dashboard we just finished
-    return redirect(url_for('home_blueprint.manage_pwd'))
-
-    
+    return redirect(url_for('pwd_blueprint.manage_pwd'))
 
 
-
-@blueprint.route('/delete-fee/<int:fee_id>', methods=['POST'])
-def delete_fee(fee_id):
-    """Removes a fee configuration."""
+@blueprint.route('/delete-pwd/<int:pwd_id>', methods=['POST'])
+def delete_pwd(pwd_id):
+    """Removes a PWD beneficiary from the registry."""
     connection = get_db_connection()
     cursor = connection.cursor()
 
     try:
-        # Check if this fee is already being used in the ledger (optional safety check)
-        # If you have a foreign key with 'ON DELETE RESTRICT', 
-        # MySQL will prevent this automatically if students are already billed.
-        
-        cursor.execute('DELETE FROM fee_structure WHERE fee_id = %s', (fee_id,))
+        # We are deleting from the PWD table using PWDID
+        cursor.execute('DELETE FROM PWD WHERE PWDID = %s', (pwd_id,))
         connection.commit()
         
         if cursor.rowcount > 0:
-            flash("Fee rule deleted successfully.", "success")
+            flash("Beneficiary has been removed from the registry.", "success")
         else:
-            flash("Fee rule not found or already deleted.", "warning")
+            flash("Record not found or already deleted.", "warning")
             
     except Exception as e:
         connection.rollback()
-        flash(f"Error: Cannot delete this fee. It may be linked to student records. {str(e)}", "danger")
+        # Log error with your Kampala time function
+        print(f"Delete Error (Kampala Time {get_kampala_time()}): {e}")
+        flash("Error: Cannot delete this record. It may be referenced in other ministry reports.", "danger")
     finally:
         cursor.close()
         connection.close()
 
-    return redirect(url_for('pwd_blueprint.fees_summary'))
+    return redirect(url_for('pwd_blueprint.manage_pwd'))
+
 
 
 
