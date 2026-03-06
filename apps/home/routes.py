@@ -45,7 +45,7 @@ def index():
             pwd_count = cursor.fetchone()['count']
 
             # Count Ministry Coordinators
-            cursor.execute("SELECT COUNT(*) as count FROM Coordinator")
+            cursor.execute("SELECT COUNT(*) as count FROM coordinator")
             coordinator_count = cursor.fetchone()['count']
 
             # Count Parishes/Churches

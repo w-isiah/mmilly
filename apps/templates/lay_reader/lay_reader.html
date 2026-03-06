@@ -1,0 +1,277 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Lay Reader Directory{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="m-0 text-dark font-weight-bold">
+                        <i class="fas fa-book-reader mr-2 text-teal"></i>Lay Reader Directory
+                    </h1>
+                    <p class="text-muted mb-0"><small>Manage lay ministers and commissioned readers</small></p>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button type="button" class="btn btn-teal btn-sm shadow-sm font-weight-bold text-white" data-toggle="modal" data-target="#addReaderModal">
+                        <i class="fas fa-plus-circle mr-1"></i> Add New Reader
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="card card-outline card-teal shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-0 font-weight-bold"><i class="fas fa-list-ul mr-2 text-muted"></i>Registered Lay Readers</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="readerSearch" class="form-control" placeholder="Search by name...">
+                                <div class="input-group-append">
+                                    <span class="input-group-text bg-white border-left-0"><i class="fas fa-search text-muted"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="readerTable">
+                            <thead class="bg-light text-muted text-uppercase small">
+                                <tr>
+                                    <th style="width: 80px;" class="pl-4">Ref ID</th>
+                                    <th>Full Name</th>
+                                    <th>Church Assignment</th>
+                                    <th>Gender</th>
+                                    <th>Contact Info</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-right pr-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reader in lay_readers %}
+                                <tr>
+                                    <td class="pl-4">
+                                        <span class="badge badge-light border text-muted">#LR-{{ '%03d' % reader.id }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="font-weight-bold text-dark">
+                                            {{ reader.title }} {{ reader.last_name }} {{ reader.first_name }}
+                                        </div>
+                                        <div class="small text-muted">{{ reader.other_names or '' }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted small"><i class="fas fa-church mr-1"></i>{{ reader.church_name or 'Not Assigned' }}</span>
+                                    </td>
+                                    <td>
+                                        {% if reader.gender == 'Male' %}
+                                            <span class="text-primary small font-weight-bold"><i class="fas fa-mars mr-1"></i>Male</span>
+                                        {% else %}
+                                            <span class="text-danger small font-weight-bold"><i class="fas fa-venus mr-1"></i>Female</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="small font-weight-bold">{{ reader.phone_number or 'N/A' }}</div>
+                                        <div class="small text-muted">{{ reader.email or 'N/A' }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if reader.is_active %}
+                                            <span class="badge badge-success px-3">Active</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary px-3">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-right pr-4">
+                                        <div class="btn-group btn-group-sm border rounded shadow-sm">
+                                            <button class="btn btn-white text-info" data-toggle="modal" data-target="#editReaderModal{{ reader.id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-white text-danger" data-toggle="modal" data-target="#deleteReaderModal{{ reader.id }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="fas fa-book-reader fa-3x mb-3 opacity-25"></i>
+                                        <p>No lay readers found in the database.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="addReaderModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ url_for('lay_readers_blueprint.add_lay_reader') }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-teal text-white">
+                    <h5 class="modal-title font-weight-bold">New Lay Reader Profile</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12 form-group">
+                            <label class="small font-weight-bold">Assigned Church</label>
+                            <select name="church_id" class="form-control" required>
+                                <option value="">-- Select Church --</option>
+                                {% for church in churches %}
+                                <option value="{{ church.id }}">{{ church.church_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="small font-weight-bold">Title</label>
+                            <input type="text" name="title" class="form-control" placeholder="Mr. / Dr." required>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="small font-weight-bold">First Name</label>
+                            <input type="text" name="first_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="small font-weight-bold">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-8 form-group">
+                            <label class="small font-weight-bold">Other Names</label>
+                            <input type="text" name="other_names" class="form-control">
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="small font-weight-bold">Gender</label>
+                            <select name="gender" class="form-control" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold">Phone Number</label>
+                            <input type="text" name="phone_number" class="form-control">
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold">Email</label>
+                            <input type="email" name="email" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="submit" class="btn btn-teal btn-sm px-4 text-white font-weight-bold">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for reader in lay_readers %}
+<div class="modal fade" id="editReaderModal{{ reader.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ url_for('lay_readers_blueprint.edit_lay_reader', reader_id=reader.id) }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title font-weight-bold">Update Profile</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12 form-group">
+                            <label class="small font-weight-bold">Church Assignment</label>
+                            <select name="church_id" class="form-control">
+                                {% for church in churches %}
+                                <option value="{{ church.id }}" {% if reader.church_id == church.id %}selected{% endif %}>{{ church.church_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="small font-weight-bold">Title</label>
+                            <input type="text" name="title" class="form-control" value="{{ reader.title }}" required>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="small font-weight-bold">First Name</label>
+                            <input type="text" name="first_name" class="form-control" value="{{ reader.first_name }}" required>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="small font-weight-bold">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" value="{{ reader.last_name }}" required>
+                        </div>
+                        <div class="col-md-8 form-group">
+                            <label class="small font-weight-bold">Other Names</label>
+                            <input type="text" name="other_names" class="form-control" value="{{ reader.other_names or '' }}">
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="small font-weight-bold">Gender</label>
+                            <select name="gender" class="form-control" required>
+                                <option value="Male" {% if reader.gender == 'Male' %}selected{% endif %}>Male</option>
+                                <option value="Female" {% if reader.gender == 'Female' %}selected{% endif %}>Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold">Phone Number</label>
+                            <input type="text" name="phone_number" class="form-control" value="{{ reader.phone_number or '' }}">
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ reader.email or '' }}">
+                        </div>
+                    </div>
+                    <div class="custom-control custom-switch mt-3">
+                        <input type="checkbox" class="custom-control-input" name="is_active" id="sw{{ reader.id }}" {% if reader.is_active %}checked{% endif %}>
+                        <label class="custom-control-label" for="sw{{ reader.id }}">Active Status</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary btn-sm px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteReaderModal{{ reader.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-trash-alt text-danger fa-3x mb-3"></i>
+                <h5 class="font-weight-bold">Delete Record?</h5>
+                <p class="small text-muted">This action cannot be undone.</p>
+                <form action="{{ url_for('lay_readers_blueprint.delete_lay_reader', reader_id=reader.id) }}" method="POST">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <button type="button" class="btn btn-light btn-sm mr-2" data-dismiss="modal">No</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Yes, Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.getElementById('readerSearch').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll('#readerTable tbody tr');
+    rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(filter) ? '' : 'none';
+    });
+});
+</script>
+
+<style>
+    .text-teal { color: #20c997 !important; }
+    .btn-teal { background-color: #20c997; border-color: #20c997; color: white; }
+    .card-teal.card-outline { border-top: 3px solid #20c997; }
+</style>
+{% endblock %}

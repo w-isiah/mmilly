@@ -1,144 +1,103 @@
-<!-- Navbar -->
-<nav class="main-header navbar navbar-expand navbar-white navbar-light border-bottom">
-  <!-- Left navbar links -->
+<nav class="main-header navbar navbar-expand navbar-white navbar-light border-bottom sticky-top shadow-sm">
+  
   <ul class="navbar-nav">
-    <!-- Menu Toggle -->
     <li class="nav-item">
-      <a class="nav-link text-secondary" data-widget="pushmenu" href="#" role="button" title="Toggle Menu">
+      <a class="nav-link text-secondary nav-icon-hover" data-widget="pushmenu" href="#" role="button" title="Toggle Menu">
         <i class="fas fa-bars"></i>
       </a>
     </li>
 
-    <!-- Home Link -->
-    <li class="nav-item d-none d-sm-inline-block">
-      <a href="/index" class="nav-link text-primary" title="Go to Dashboard">
-        <i class="fas fa-home me-1"></i> Home
+    <li class="nav-item d-none d-md-inline-block">
+      <a href="/index" class="nav-link font-weight-bold" title="Go to Dashboard">
+        <i class="fas fa-home text-primary mr-1"></i> Dashboard
       </a>
     </li>
 
-    <!-- Database/School Display --> <!-- This is a comment
     {% if session.get('assigned_db') %}
-    <li class="nav-item d-none d-sm-inline-block">
-      <a href="#" class="nav-link text-info" title="Current School/Database">
-        <i class="fas fa-database me-1"></i>
-        <span class="badge badge-info">{{ session['assigned_db'].replace('_', ' ').title() }}</span>
-      </a>
+    <li class="nav-item d-none d-lg-inline-block ml-2">
+      <span class="nav-link">
+        <span class="badge badge-info elevation-1 px-2 py-1" style="font-weight: 500;">
+          <i class="fas fa-database mr-1"></i> {{ session['assigned_db'].replace('_', ' ').title() }}
+        </span>
+      </span>
     </li>
     {% endif %}
-  -->
-    <!-- Role Display -->
+
     {% if session.get('role') %}
-    <li class="nav-item d-none d-sm-inline-block">
-      <a href="#" class="nav-link text-success" title="Your Role">
-        <i class="fas fa-user-tag me-1"></i> 
-        <span class="badge badge-success">{{ session['role'].replace('_', ' ').title() }}</span>
-      </a>
+    <li class="nav-item d-none d-lg-inline-block">
+      <span class="nav-link">
+        <span class="badge badge-success elevation-1 px-2 py-1" style="font-weight: 500;">
+          <i class="fas fa-user-tag mr-1"></i> {{ session['role'].replace('_', ' ').title() }}
+        </span>
+      </span>
     </li>
     {% endif %}
   </ul>
 
-  <!-- Right navbar links -->
   <ul class="navbar-nav ml-auto">
-    <!-- Messages Dropdown -->
+    
     {% if session.get('id') %}
     <li class="nav-item dropdown">
-      <a class="nav-link" data-toggle="dropdown" href="#" title="Messages">
+      <a class="nav-link nav-icon-hover" data-toggle="dropdown" href="#" title="Messages">
         <i class="far fa-comments"></i>
-        <span class="badge badge-danger navbar-badge">0</span>
+        <span class="badge badge-danger navbar-badge shadow-sm">0</span>
       </a>
-      <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-        <span class="dropdown-item dropdown-header">Messages</span>
+      <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right border-0 shadow-lg">
+        <span class="dropdown-item dropdown-header font-weight-bold">Recent Messages</span>
         <div class="dropdown-divider"></div>
-        <div class="text-center py-3">
-          <i class="fas fa-comments fa-2x text-muted mb-2"></i>
-          <p class="text-muted mb-0">No new messages</p>
+        <div class="text-center py-4">
+          <i class="fas fa-envelope-open text-muted fa-2x mb-2"></i>
+          <p class="text-muted small mb-0">Your inbox is empty</p>
         </div>
         <div class="dropdown-divider"></div>
-        <a href="/messages" class="dropdown-item dropdown-footer">View All Messages</a>
+        <a href="/messages" class="dropdown-item dropdown-footer text-primary">View All Messages</a>
       </div>
     </li>
-    {% endif %}
 
-    <!-- Notifications Dropdown -->
-    {% if session.get('id') %}
     <li class="nav-item dropdown">
-      <a class="nav-link" data-toggle="dropdown" href="#" title="Notifications">
+      <a class="nav-link nav-icon-hover" data-toggle="dropdown" href="#" title="Notifications">
         <i class="far fa-bell"></i>
-        <span class="badge badge-warning navbar-badge">0</span>
+        <span class="badge badge-warning navbar-badge shadow-sm">0</span>
       </a>
-      <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-        <span class="dropdown-item dropdown-header">Notifications</span>
+      <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right border-0 shadow-lg">
+        <span class="dropdown-item dropdown-header font-weight-bold">Notifications</span>
         <div class="dropdown-divider"></div>
-        <div class="text-center py-3">
-          <i class="fas fa-bell fa-2x text-muted mb-2"></i>
-          <p class="text-muted mb-0">No new notifications</p>
+        <div class="text-center py-4">
+          <i class="fas fa-bell-slash text-muted fa-2x mb-2"></i>
+          <p class="text-muted small mb-0">No new alerts</p>
         </div>
         <div class="dropdown-divider"></div>
-        <a href="/notifications" class="dropdown-item dropdown-footer">View All Notifications</a>
+        <a href="/notifications" class="dropdown-item dropdown-footer text-primary">View All Alerts</a>
       </div>
+    </li>
+
+    <li class="nav-item dropdown user-menu">
+      <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
+        <i class="fas fa-user-circle fa-lg text-secondary"></i>
+        <span class="d-none d-md-inline ml-1 font-weight-600">{{ session.get('username', 'Account') }}</span>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right border-0 shadow-lg">
+        <li class="user-header bg-primary">
+          <i class="fas fa-user-shield fa-3x mb-2"></i>
+          <p>
+            {{ session.get('username') }}
+            <small>Active Session</small>
+          </p>
+        </li>
+        <li class="user-footer d-flex justify-content-between bg-light">
+          <a href="/edit_user_profile/{{ session['id'] }}" class="btn btn-default btn-flat rounded shadow-sm">
+             <i class="fas fa-cog mr-1"></i> Profile
+          </a>
+          <a href="/logout" class="btn btn-danger btn-flat rounded shadow-sm">
+             <i class="fas fa-sign-out-alt mr-1"></i> Sign out
+          </a>
+        </li>
+      </ul>
     </li>
     {% endif %}
 
-    <!-- User Account Dropdown -->
-    <li class="nav-item dropdown">
-      <a class="nav-link" data-toggle="dropdown" href="#" title="Account">
-        <i class="fas fa-user-circle fa-lg"></i>
-        <span class="ml-1 d-none d-md-inline">
-          {% if session.get('username') %}
-            {{ session['username'] }}
-          {% else %}
-            Guest
-          {% endif %}
-        </span>
-      </a>
-      <div class="dropdown-menu dropdown-menu-right">
-        <span class="dropdown-header">
-          {% if session.get('username') %}
-            <i class="fas fa-user mr-2"></i>{{ session['username'] }}
-          {% else %}
-            <i class="fas fa-user mr-2"></i>Guest User
-          {% endif %}
-        </span>
-        <div class="dropdown-divider"></div>
-        
-        {% if session.get('id') %}
-        <a href="{{ url_for('authentication_blueprint.edit_user_profile', id=session['id']) }}" 
-           class="dropdown-item">
-          <i class="fas fa-user-edit mr-2"></i> My Profile
-        </a>
-        {% endif %}
-        
-        <a href="/settings" class="dropdown-item">
-          <i class="fas fa-cog mr-2"></i> Settings
-        </a>
-        
-        <div class="dropdown-divider"></div>
-        
-        <a href="/help" class="dropdown-item">
-          <i class="fas fa-question-circle mr-2"></i> Help
-        </a>
-        
-        <a href="/about" class="dropdown-item">
-          <i class="fas fa-info-circle mr-2"></i> About
-        </a>
-        
-        <div class="dropdown-divider"></div>
-        
-        {% if session.get('id') %}
-        <a href="{{ url_for('authentication_blueprint.logout') }}" class="dropdown-item text-danger">
-          <i class="fas fa-sign-out-alt mr-2"></i> Logout
-        </a>
-        {% else %}
-        <a href="{{ url_for('authentication_blueprint.login') }}" class="dropdown-item text-success">
-          <i class="fas fa-sign-in-alt mr-2"></i> Login
-        </a>
-        {% endif %}
-      </div>
-    </li>
-
-    <!-- Control Sidebar Toggle -->
     <li class="nav-item">
-      <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button" title="Toggle Control Panel">
+      <a class="nav-link text-secondary" data-widget="control-sidebar" data-slide="true" href="#" role="button" title="Settings">
         <i class="fas fa-th-large"></i>
       </a>
     </li>
@@ -146,29 +105,55 @@
 </nav>
 
 <style>
+  /* Refined Navbar styling */
   .navbar-badge {
-    font-size: 0.6rem;
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    padding: 2px 5px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    top: 5px !important;
+    right: 5px !important;
+    padding: 2px 4px !important;
   }
+  
   .nav-link {
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.85rem;
+    display: flex;
+    align-items: center;
   }
-  .dropdown-menu {
-    border: 1px solid rgba(0,0,0,.15);
-    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+
+  .nav-icon-hover:hover {
+    color: #007bff !important;
+    transform: scale(1.1);
+    transition: all 0.2s ease;
   }
-  .dropdown-header {
-    font-size: 0.875rem;
-    font-weight: 600;
+
+  .dropdown-menu-lg {
+    min-width: 280px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .font-weight-600 { font-weight: 600; }
+
+  .user-header {
+    height: auto;
+    padding: 20px;
+    text-align: center;
+  }
+
+  /* Outline badge style for context indicators */
+  .badge-outline-info {
+    color: #17a2b8;
+    border: 1px solid #17a2b8;
+    background-color: transparent;
   }
 </style>
 
 <script>
 $(document).ready(function() {
-  // Initialize tooltips
-  $('[title]').tooltip();
+  // Initialize tooltips with a delay to prevent flickering
+  $('[title]').tooltip({
+    trigger: 'hover',
+    delay: { "show": 600, "hide": 100 }
+  });
 });
 </script>

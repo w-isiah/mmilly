@@ -1,34 +1,47 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}Edit User{% endblock %}
-
-{% block body_class %}sidebar-mini layout-footer-fixed{% endblock %}
+{% block title %} Edit User {% endblock %}
+{% block body_class %}sidebar-mini layout-fixed{% endblock %}
 
 {% block stylesheets %}
-<!-- Google Font -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-<!-- Font Awesome -->
-<link rel="stylesheet" href="/static/assets/plugins/fontawesome-free/css/all.min.css">
-<!-- Select2 -->
-<link rel="stylesheet" href="/static/assets/plugins/select2/css/select2.min.css">
-<link rel="stylesheet" href="/static/assets/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
-<!-- AdminLTE -->
-<link rel="stylesheet" href="/static/assets/css/adminlte.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <link rel="stylesheet" href="/static/assets/plugins/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="/static/assets/plugins/select2/css/select2.min.css">
+  <link rel="stylesheet" href="/static/assets/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+  <link rel="stylesheet" href="/static/assets/css/adminlte.min.css">
+  <style>
+    .img-preview-container {
+      position: relative;
+      display: inline-block;
+    }
+    .img-preview-container img {
+      border: 3px solid #dee2e6;
+      transition: transform 0.2s;
+    }
+    .img-preview-container img:hover {
+      transform: scale(1.05);
+    }
+    .section-divider {
+      border-bottom: 2px solid #6f42c1;
+      width: 50px;
+      margin-bottom: 20px;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
 <div class="content-wrapper">
-  <!-- Content Header -->
+  
   <section class="content-header">
     <div class="container-fluid">
       <div class="row mb-2">
         <div class="col-sm-6">
-          <h1><i class="fas fa-user-edit mr-2"></i>Edit User</h1>
+          <h1 class="text-bold"><i class="fas fa-user-edit mr-2 text-primary"></i>Modify Account</h1>
         </div>
         <div class="col-sm-6">
           <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="/index">Home</a></li>
-            <li class="breadcrumb-item"><a href="/customers">Customers</a></li>
+            <li class="breadcrumb-item"><a href="/manage_users">User Registry</a></li>
             <li class="breadcrumb-item active">Edit User</li>
           </ol>
         </div>
@@ -36,181 +49,169 @@
     </div>
   </section>
 
-  <!-- Flash Messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show mx-3" role="alert">
-          <strong>{{ message }}</strong>
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-      {% endfor %}
+      <div class="mx-3">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-info-circle mr-2"></i> {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
   {% endwith %}
 
-  <!-- Main Content -->
   <section class="content">
     <div class="container-fluid">
-      <div class="card card-primary card-outline">
-        <div class="card-header">
-          <h3 class="card-title">User Information</h3>
+      <div class="card card-outline card-primary shadow-sm">
+        <div class="card-header bg-white">
+          <h3 class="card-title text-muted">User ID: <span class="text-dark">#{{ user.id }}</span></h3>
         </div>
 
         <form action="{{ url_for('authentication_blueprint.edit_user', id=user.id) }}" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+          
           <div class="card-body">
             <div class="row">
-              <!-- Username -->
-              <div class="col-md-6">
+              
+              <div class="col-12">
+                <h6 class="text-uppercase text-primary font-weight-bold">Identity Details</h6>
+                <div class="section-divider"></div>
+              </div>
+
+              <div class="col-md-4">
                 <div class="form-group">
                   <label for="username">Username</label>
                   <input type="text" class="form-control" name="username" id="username" value="{{ user.username }}" required>
                 </div>
               </div>
-
-              <!-- First Name -->
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <div class="form-group">
                   <label for="first_name">First Name</label>
                   <input type="text" class="form-control" name="first_name" id="first_name" value="{{ user.first_name }}" required>
                 </div>
               </div>
-
-              <!-- Last Name -->
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <div class="form-group">
                   <label for="last_name">Last Name</label>
                   <input type="text" class="form-control" name="last_name" id="last_name" value="{{ user.last_name }}" required>
                 </div>
               </div>
 
-              <!-- Other Name -->
               <div class="col-md-6">
                 <div class="form-group">
-                  <label for="other_name">Other Name</label>
+                  <label for="other_name">Other Names <small>(Middle name)</small></label>
                   <input type="text" class="form-control" name="other_name" id="other_name" value="{{ user.other_name }}">
                 </div>
               </div>
-
-              <!-- Name SF -->
               <div class="col-md-6">
                 <div class="form-group">
-                  <label for="name_sf">Name SF</label>
-                  <input type="text" class="form-control" name="name_sf" id="name_sf" value="{{ user.name_sf }}">
+                  <label for="name_sf">Short Name Form (SF)</label>
+                  <input type="text" class="form-control" name="name_sf" id="name_sf" value="{{ user.name_sf }}" placeholder="Initials">
                 </div>
               </div>
 
-              <!-- Password -->
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label for="password">Password <small class="text-muted">(leave blank to keep current)</small></label>
-                  <input type="password" class="form-control" name="password" id="password" placeholder="{{ user.password}}">
-
-                </div>
+              <div class="col-12 mt-4">
+                <h6 class="text-uppercase text-primary font-weight-bold">Access Permissions</h6>
+                <div class="section-divider"></div>
               </div>
 
-              <!-- Confirm Password -->
               <div class="col-md-6">
                 <div class="form-group">
-                  <label for="confirm_password">Confirm Password</label>
-                  <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="********">
-                </div>
-              </div>
-
-              <!-- Show Password Toggle -->
-              <div class="col-md-12">
-                <div class="form-check ml-2 mt-2">
-                  <input type="checkbox" class="form-check-input" id="show_password_checkbox" onclick="togglePasswordVisibility()">
-                  <label class="form-check-label" for="show_password_checkbox">Show Password</label>
-                </div>
-              </div>
-
-              <!-- Role -->
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label for="role">Primary Role</label>
+                  <label for="role">Primary System Role</label>
                   <select class="form-control select2bs4" name="role" id="role" required>
-                    <option value="" disabled>Select a role</option>
-                    <option value="class_teacher" {% if user.role == 'class_teacher' %}selected{% endif %}>Class Teacher</option>
                     <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Administrator</option>
-                    <option value="inventory_manager" {% if user.role == 'inventory_manager' %}selected{% endif %}>Inventory Manager</option>
-                    <option value="section_head" {% if user.role == 'section_head' %}selected{% endif %}>Head Of Section</option>
-                    <option value="assistant_manager" {% if user.role == 'assistant_manager' %}selected{% endif %}>Assistant Inventory Manager</option>
-                    <option value="Head_ICT" {% if user.role == 'Head_ICT' %}selected{% endif %}>Head ICT</option>
-                    <option value="teacher" {% if user.role == 'teacher' %}selected{% endif %}>Teacher</option>
-                    <option value="dorm_master" {% if user.role == 'dorm_master' %}selected{% endif %}>Dorm Master</option>
-
-                    <option value="headteacher" {% if user.role == 'headteacher' %}selected{% endif %}>Head Teacher</option>
-
-                    <option value="metron" {% if user.role == 'metron' %}selected{% endif %}>Dorm Matron</option>
-
-
-
-                    <option value="other" {% if user.role == 'other' %}selected{% endif %}>Other</option>
+                    <option value="director" {% if user.role == 'director' %}selected{% endif %}>Director</option>
+                    <option value="Head_ICT" {% if user.role == 'Head_ICT' %}selected{% endif %}>Head of ICT</option>
+                    <option value="co_ordinator" {% if user.role == 'co_ordinator' %}selected{% endif %}>Coordinator</option>
+                    <option value="department_head" {% if user.role == 'department_head' %}selected{% endif %}>Department Head</option>
                     <option value="dos" {% if user.role == 'dos' %}selected{% endif %}>Deputy of Studies</option>
-                    <option value="co_ordinator" {% if user.role == 'co_ordinator' %}selected{% endif %}>Co-Ordinator</option>
+                    <option value="other" {% if user.role == 'other' %}selected{% endif %}>Staff / Other</option>
                   </select>
                 </div>
               </div>
 
-              <!-- Role1 -->
               <div class="col-md-6">
                 <div class="form-group">
-                  <label for="role1">Additional Role (role1)</label>
+                  <label for="role1">Secondary Role</label>
                   <select class="form-control select2bs4" name="role1" id="role1">
-                    <option value="" disabled {% if not user.role1 %}selected{% endif %}>Select additional role</option>
-                    <option value="teacher" {% if user.role1 == 'teacher' %}selected{% endif %}>Teacher</option>
-                    <option value="None" {% if user.role1 == 'None' or not user.role1 %}selected{% endif %}>None</option>
+                    <option value="None" {% if user.role1 == 'None' or not user.role1 %}selected{% endif %}>None (Standard Access)</option>
+                    <option value="teacher" {% if user.role1 == 'teacher' %}selected{% endif %}>Field Officer / Teacher</option>
+                    <option value="audit" {% if user.role1 == 'audit' %}selected{% endif %}>Auditor</option>
                   </select>
                 </div>
               </div>
 
-              <!-- Profile Image -->
+              <div class="col-12 mt-4">
+                <h6 class="text-uppercase text-danger font-weight-bold">Security & Credentials</h6>
+                <div class="section-divider" style="border-color: #dc3545;"></div>
+              </div>
+
               <div class="col-md-6">
                 <div class="form-group">
-                  <label for="profile_image">Profile Image</label>
-                  <div class="custom-file">
-                    <input type="file" class="custom-file-input" name="profile_image" id="profile_image" accept="image/*">
-                    <label class="custom-file-label" for="profile_image">Choose image</label>
-                  </div>
-                  <small class="form-text text-muted">Accepted formats: PNG, JPG, JPEG, GIF.</small>
-                  {% if user.profile_image %}
-                    <div class="mt-2">
-                      <img src="/static/uploads/{{ user.profile_image }}" alt="Profile Image" class="img-thumbnail" width="150">
-                    </div>
-                  {% else %}
-                    <p class="mt-2">No profile image available</p>
-                  {% endif %}
+                  <label for="password">New Password <small class="text-danger">(Only if changing)</small></label>
+                  <input type="password" class="form-control" name="password" id="password" placeholder="Leave empty to keep existing">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="confirm_password">Verify New Password</label>
+                  <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Confirm new password">
                 </div>
               </div>
 
-              <!-- Signature Image -->
+              <div class="col-12 mb-4">
+                <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="togglePswd" onclick="togglePasswordVisibility()">
+                  <label class="custom-control-label font-weight-normal" for="togglePswd">Reveal password characters</label>
+                </div>
+              </div>
+
               <div class="col-md-6">
                 <div class="form-group">
-                  <label for="sign_image">Signature Image <small class="text-muted">(Optional)</small></label>
-                  <div class="custom-file">
-                    <input type="file" class="custom-file-input" name="sign_image" id="sign_image" accept="image/*">
-                    <label class="custom-file-label" for="sign_image">Choose signature image</label>
+                  <label>Profile Avatar</label>
+                  <div class="custom-file mb-3">
+                    <input type="file" class="custom-file-input" name="profile_image" id="profile_image" accept="image/*">
+                    <label class="custom-file-label" for="profile_image">Replace photo...</label>
                   </div>
-                  <small class="form-text text-muted">Accepted formats: PNG, JPG, JPEG, GIF.</small>
-                  {% if user.sign_image %}
-                    <div class="mt-2">
-                      <img src="/static/uploads/{{ user.sign_image }}" alt="Signature Image" class="img-thumbnail" width="150">
-                    </div>
-                  {% else %}
-                    <p class="mt-2">No signature image available</p>
-                  {% endif %}
+                  <div class="img-preview-container">
+                    {% if user.profile_image %}
+                      <img src="/static/uploads/{{ user.profile_image }}" class="img-thumbnail elevation-1" width="120">
+                    {% else %}
+                      <img src="/static/assets/img/default-profile.png" class="img-thumbnail" width="120">
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Official Signature</label>
+                  <div class="custom-file mb-3">
+                    <input type="file" class="custom-file-input" name="sign_image" id="sign_image" accept="image/*">
+                    <label class="custom-file-label" for="sign_image">Replace signature...</label>
+                  </div>
+                  <div class="img-preview-container">
+                    {% if user.sign_image %}
+                      <img src="/static/uploads/{{ user.sign_image }}" class="img-thumbnail elevation-1" width="120">
+                    {% else %}
+                      <p class="text-muted small italic">No digital signature uploaded.</p>
+                    {% endif %}
+                  </div>
                 </div>
               </div>
 
             </div>
           </div>
 
-          <div class="card-footer text-center">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save Changes</button>
-            <a href="/manage_users" class="btn btn-secondary ml-2">Cancel</a>
+          <div class="card-footer bg-light d-flex justify-content-between">
+            <a href="/manage_users" class="btn btn-default shadow-sm"><i class="fas fa-chevron-left mr-1"></i> Back to Registry</a>
+            <button type="submit" class="btn btn-primary elevation-2">
+              <i class="fas fa-check-circle mr-1"></i> Commit Updates
+            </button>
           </div>
         </form>
       </div>
@@ -223,20 +224,26 @@
 <script src="/static/assets/plugins/jquery/jquery.min.js"></script>
 <script src="/static/assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="/static/assets/plugins/select2/js/select2.full.min.js"></script>
-<script src="/static/assets/js/adminlte.min.js"></script>
 <script src="/static/assets/plugins/bs-custom-file-input/bs-custom-file-input.min.js"></script>
+<script src="/static/assets/js/adminlte.min.js"></script>
 
 <script>
   $(function () {
+    // UI Init
     $('.select2bs4').select2({ theme: 'bootstrap4' });
     bsCustomFileInput.init();
+
+    // Auto-hide alerts
+    setTimeout(() => {
+      $(".alert").fadeTo(500, 0).slideUp(500, function() { $(this).remove(); });
+    }, 5000);
   });
 
   function togglePasswordVisibility() {
-    const password = document.getElementById("password");
-    const confirm = document.getElementById("confirm_password");
-    const isVisible = password.type === "text";
-    password.type = confirm.type = isVisible ? "password" : "text";
+    const p = document.getElementById("password");
+    const c = document.getElementById("confirm_password");
+    const isText = p.type === "text";
+    p.type = c.type = isText ? "password" : "text";
   }
 </script>
 {% endblock %}

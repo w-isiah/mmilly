@@ -3,9 +3,9 @@
   <!-- Brand Logo -->
   <a href="{{ url_for('home_blueprint.index') }}" class="brand-link text-center">
     <img src="/static/uploads/id_image/logo2.png"
-         alt="School Logo"
-         class="brand-image img-circle elevation-3"
-         style="opacity: .8">
+    alt="School Logo"
+    class="brand-image img-circle elevation-3"
+    style="opacity: .8">
     <span class="brand-text font-weight-light">COU-PWDS</span>
   </a>
 
@@ -16,108 +16,148 @@
       <div class="image">
         {% if session.get('profile_image') %}
         <img src="/static/uploads/{{ session['profile_image'] }}"
-             class="img-circle elevation-2"
-             alt="User Image"
-             onerror="this.src='/static/assets/img/default-user.png'">
+        class="img-circle elevation-2"
+        alt="User Image"
+        onerror="this.src='/static/assets/img/default-user.png'">
         {% else %}
         <img src="/static/assets/img/default-user.png"
-             class="img-circle elevation-2"
-             alt="User Image">
+        class="img-circle elevation-2"
+        alt="User Image">
         {% endif %}
       </div>
       <div class="info">
         <a href="{{ url_for('authentication_blueprint.edit_user_profile', id=session['id']) }}" 
-           class="d-block" title="View Profile">
-          <i class="fas fa-user-circle mr-1"></i>
-          {{ session.get('first_name', 'User') }} {{ session.get('last_name', '') }}
-        </a>
-        <small class="text-muted">
-          <i class="fas fa-user-tag mr-1"></i>
-          {{ session.get('role', 'User')|replace('_', ' ')|title }}
-        </small>
+        class="d-block" title="View Profile">
+        <i class="fas fa-user-circle mr-1"></i>
+        {{ session.get('first_name', 'User') }} {{ session.get('last_name', '') }}
+      </a>
+      <small class="text-muted">
+        <i class="fas fa-user-tag mr-1"></i>
+        {{ session.get('role', 'User')|replace('_', ' ')|title }}
+      </small>
+    </div>
+  </div>
+
+  <div class="form-inline mb-2">
+    <div class="input-group" data-widget="sidebar-search">
+      <input class="form-control form-control-sidebar" type="search" placeholder="Search registry..." id="sidebarSearch">
+      <div class="input-group-append">
+        <button class="btn btn-sidebar"><i class="fas fa-search fa-fw"></i></button>
       </div>
     </div>
+  </div>
 
-    <div class="form-inline mb-2">
-      <div class="input-group" data-widget="sidebar-search">
-        <input class="form-control form-control-sidebar" type="search" placeholder="Search registry..." id="sidebarSearch">
-        <div class="input-group-append">
-          <button class="btn btn-sidebar"><i class="fas fa-search fa-fw"></i></button>
-        </div>
-      </div>
-    </div>
+  <nav class="mt-2">
+    <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu" data-accordion="false">
 
-    <nav class="mt-2">
-      <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu" data-accordion="false">
-        
         <li class="nav-item">
-          <a href="/index" class="nav-link {% if segment == 'index' %}active{% endif %}">
-            <i class="nav-icon fas fa-tachometer-alt"></i>
-            <p>Ministry Dashboard</p>
-          </a>
+            <a href="/index" class="nav-link {% if segment == 'index' %}active{% endif %}">
+                <i class="nav-icon fas fa-tachometer-alt"></i>
+                <p>Ministry Dashboard</p>
+            </a>
         </li>
 
         <li class="nav-header text-uppercase text-xs mt-3 mb-1">
-          <i class="fas fa-database mr-1"></i> REGISTRY CORE
+            <i class="fas fa-database mr-1"></i> REGISTRY CORE
         </li>
-        
+        <li class="nav-header text-uppercase small opacity-50 ml-3">Registry & Personnel</li>
+
         <li class="nav-item">
-          <a href="/manage_pwds" class="nav-link {% if segment == 'manage_pwds' %}active{% endif %}">
-            <i class="nav-icon fas fa-wheelchair"></i>
-            <p>PWD Personnel</p>
-          </a>
+            <a href="{{ url_for('pwd_blueprint.manage_pwds') }}" class="nav-link {% if segment == 'manage_pwds' %}active{% endif %}">
+                <i class="nav-icon fas fa-wheelchair text-info"></i>
+                <p>PWD Personnel</p>
+            </a>
         </li>
 
         <li class="nav-item">
-          <a href="/manage_churches" class="nav-link {% if segment == 'manage_churches' %}active{% endif %}">
-            <i class="nav-icon fas fa-church"></i>
-            <p>Church Directory</p>
-          </a>
+            <a href="{{ url_for('clergy_blueprint.manage_clergy') }}" class="nav-link {% if segment == 'manage_clergy' %}active{% endif %}">
+                <i class="nav-icon fas fa-user-tie text-primary"></i>
+                <p>Clergy Directory</p>
+            </a>
         </li>
 
         <li class="nav-item">
-          <a href="/manage_coordinators" class="nav-link {% if segment == 'manage_coordinators' %}active{% endif %}">
-            <i class="nav-icon fas fa-user-tie"></i>
-            <p>Staff Coordinators</p>
-          </a>
+            <a href="{{ url_for('lay_readers_blueprint.manage_lay_readers') }}" class="nav-link {% if segment == 'manage_lay_readers' %}active{% endif %}">
+                <i class="nav-icon fas fa-book-reader text-teal"></i>
+                <p>Lay Readers</p>
+            </a>
         </li>
 
-      
-    
+        <li class="nav-item">
+            <a href="{{ url_for('coordinators_blueprint.manage_coordinators') }}" class="nav-link {% if segment == 'manage_coordinators' %}active{% endif %}">
+                <i class="nav-icon fas fa-user-shield text-warning"></i>
+                <p>Coordinators</p>
+            </a>
+        </li>
+
+        <li class="nav-header text-uppercase small opacity-50 ml-3 mt-2">Ecclesiastical Structure</li>
+
+        <li class="nav-item">
+            <a href="{{ url_for('church_blueprint.manage_churches') }}" class="nav-link {% if segment == 'manage_churches' %}active{% endif %}">
+                <i class="nav-icon fas fa-church"></i>
+                <p>Church Directory</p>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="{{ url_for('dioceses_blueprint.manage_dioceses') }}" class="nav-link {% if segment == 'manage_dioceses' %}active{% endif %}">
+                <i class="nav-icon fas fa-map-marked-alt text-danger"></i>
+                <p>Dioceses</p>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="{{ url_for('archdeaconries_blueprint.manage_archdeaconries') }}" class="nav-link {% if segment == 'manage_archdeaconries' %}active{% endif %}">
+                <i class="nav-icon fas fa-map-marked-alt text-indigo"></i>
+                <p>Archdeaconries</p>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="{{ url_for('parishes_blueprint.manage_parishes') }}" class="nav-link {% if segment == 'manage_parishes' %}active{% endif %}">
+                <i class="nav-icon fas fa-map-signs text-olive"></i>
+                <p>Parishes</p>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="{{ url_for('disability_types_blueprint.manage_disability_types') }}" class="nav-link {% if segment == 'manage_disability_types' %}active{% endif %}">
+                <i class="nav-icon fas fa-list-ol"></i>
+                <p>Disability Types</p>
+            </a>
+        </li>
 
         {% if session.get('role') == 'super_admin' %}
         <li class="nav-header text-uppercase text-xs mt-3 mb-1">
-          <i class="fas fa-shield-alt mr-1"></i> ADMINISTRATION
-        </li>
-        
-        <li class="nav-item">
-          <a href="/manage_users" class="nav-link {% if segment == 'manage_users' %}active{% endif %}">
-            <i class="nav-icon fas fa-users-cog"></i>
-            <p>User Access Control</p>
-          </a>
+            <i class="fas fa-shield-alt mr-1"></i> ADMINISTRATION
         </li>
 
-      
+        <li class="nav-item">
+            <a href="/manage_users" class="nav-link {% if segment == 'manage_users' %}active{% endif %}">
+                <i class="nav-icon fas fa-users-cog"></i>
+                <p>User Access Control</p>
+            </a>
+        </li>
         {% endif %}
 
         <li class="nav-header text-uppercase text-xs mt-3 mb-1">
-          <i class="fas fa-info-circle mr-1"></i> SUPPORT
+            <i class="fas fa-info-circle mr-1"></i> SUPPORT
         </li>
         <li class="nav-item">
-          <a href="/help" class="nav-link {% if segment == 'help' %}active{% endif %}">
-            <i class="nav-icon fas fa-question-circle"></i>
-            <p>Get Assistance</p>
-          </a>
+            <a href="/help" class="nav-link {% if segment == 'help' %}active{% endif %}">
+                <i class="nav-icon fas fa-question-circle"></i>
+                <p>Get Assistance</p>
+            </a>
         </li>
         <li class="nav-item">
-          <a href="{{ url_for('authentication_blueprint.logout') }}" class="nav-link text-warning">
-            <i class="nav-icon fas fa-power-off"></i>
-            <p>Secure Logout</p>
-          </a>
+            <a href="{{ url_for('authentication_blueprint.logout') }}" class="nav-link text-warning">
+                <i class="nav-icon fas fa-power-off"></i>
+                <p>Secure Logout</p>
+            </a>
         </li>
-      </ul>
-    </nav>
-  </div>
+    </ul>
+</nav>
+</div>
 </aside>
 
 <style>
@@ -142,26 +182,26 @@
 </style>
 
 <script>
-$(document).ready(function() {
+  $(document).ready(function() {
   // Enhanced Search Logic
-  $('#sidebarSearch').on('keyup', function() {
-    const term = $(this).val().toLowerCase();
-    $('.nav-item:not(.nav-header)').each(function() {
-      const match = $(this).text().toLowerCase().indexOf(term) > -1;
-      $(this).toggle(match);
-      if(match && term !== '') {
-        $(this).parents('.nav-item').addClass('menu-open');
-      }
-    });
-    if(term === '') {
+    $('#sidebarSearch').on('keyup', function() {
+      const term = $(this).val().toLowerCase();
+      $('.nav-item:not(.nav-header)').each(function() {
+        const match = $(this).text().toLowerCase().indexOf(term) > -1;
+        $(this).toggle(match);
+        if(match && term !== '') {
+          $(this).parents('.nav-item').addClass('menu-open');
+        }
+      });
+      if(term === '') {
         $('.nav-item').show();
         $('.menu-open').removeClass('menu-open');
-    }
-  });
+      }
+    });
 
   // Preserve Active View
-  $('.nav-link.active').parents('.nav-item').addClass('menu-open');
-});
+    $('.nav-link.active').parents('.nav-item').addClass('menu-open');
+  });
 </script>
 
 

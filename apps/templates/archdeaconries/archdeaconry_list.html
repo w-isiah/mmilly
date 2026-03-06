@@ -1,0 +1,225 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Archdeaconries{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="m-0 text-dark font-weight-bold">
+                        <i class="fas fa-map-marked-alt mr-2 text-primary"></i>Archdeaconry Registry
+                    </h1>
+                    <p class="text-muted mb-0"><small>Manage regional administrative jurisdictions and coverage areas</small></p>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button type="button" class="btn btn-primary btn-sm shadow-sm font-weight-bold" data-toggle="modal" data-target="#addArchModal">
+                        <i class="fas fa-plus-circle mr-1"></i> Add New Archdeaconry
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="small-box bg-white shadow-sm border-left border-primary">
+                        <div class="inner">
+                            <h3>{{ stats.total_count }}</h3>
+                            <p class="text-muted mb-0">Total Archdeaconries</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-outline card-primary shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-0 font-weight-bold"><i class="fas fa-list-ul mr-2 text-muted"></i>Registered Archdeaconries</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="searchInput" class="form-control" placeholder="Search archdeaconries...">
+                                <div class="input-group-append">
+                                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="archTable">
+                            <thead class="bg-light text-muted text-uppercase small">
+                                <tr>
+                                    <th style="width: 80px;">ID</th>
+                                    <th style="width: 200px;">Name</th>
+                                    <th style="width: 180px;">Parent Diocese</th>
+                                    <th>Description / Coverage</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-right pr-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for arch in archdeaconries %}
+                                <tr>
+                                    <td>
+                                        <span class="badge badge-light border text-muted">#{{ arch.id }}</span>
+                                    </td>
+                                    <td><div class="font-weight-bold text-dark">{{ arch.name }}</div></td>
+                                    <td><span class="badge badge-info shadow-sm">{{ arch.diocese_name }}</span></td>
+                                    <td><span class="text-sm text-muted">{{ arch.description or 'No description provided.' }}</span></td>
+                                    <td class="text-center">
+                                        {% if arch.is_active %}
+                                        <span class="badge badge-success px-3">Active</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary px-3">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-right pr-4">
+                                        <div class="btn-group btn-group-sm border rounded shadow-sm bg-white">
+                                            <button class="btn btn-white text-info" data-toggle="modal" data-target="#editArchModal{{ arch.id }}" title="Edit"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-white text-danger" data-toggle="modal" data-target="#deleteArchModal{{ arch.id }}" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="fas fa-map-signs fa-3x mb-3 opacity-50"></i>
+                                        <p>No archdeaconries registered yet.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="addArchModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ url_for('archdeaconries_blueprint.add_archdeaconry') }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-map-plus mr-2"></i>Register Archdeaconry</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Parent Diocese <span class="text-danger">*</span></label>
+                        <select name="diocese_id" class="form-control" required>
+                            <option value="">-- Select Diocese --</option>
+                            {% for d in dioceses %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Archdeaconry Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Namirembe Archdeaconry" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Description / Coverage Area</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Briefly describe the area..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 font-weight-bold">Save Archdeaconry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for arch in archdeaconries %}
+<div class="modal fade" id="editArchModal{{ arch.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ url_for('archdeaconries_blueprint.edit_archdeaconry', arch_id=arch.id) }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-2"></i>Modify Archdeaconry</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Parent Diocese</label>
+                        <select name="diocese_id" class="form-control" required>
+                            {% for d in dioceses %}
+                            <option value="{{ d.id }}" {% if d.id == arch.diocese_id %}selected{% endif %}>{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Archdeaconry Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ arch.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Description</label>
+                        <textarea name="description" class="form-control" rows="3">{{ arch.description }}</textarea>
+                    </div>
+                    <div class="custom-control custom-switch mt-3">
+                        <input type="checkbox" class="custom-control-input" name="is_active" id="activeSw{{ arch.id }}" {% if arch.is_active %}checked{% endif %}>
+                        <label class="custom-control-label" for="activeSw{{ arch.id }}">Status: Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info btn-sm px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteArchModal{{ arch.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <form action="{{ url_for('archdeaconries_blueprint.delete_archdeaconry', arch_id=arch.id) }}" method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Confirm Deletion</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p>Are you sure you want to delete <strong>{{ arch.name }}</strong>?</p>
+                    <p class="small text-muted mb-0">This action cannot be undone. It will only succeed if no parishes are currently linked to this archdeaconry.</p>
+                </div>
+                <div class="modal-footer bg-light justify-content-center">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-dismiss="modal">No, Keep it</button>
+                    <button type="submit" class="btn btn-danger btn-sm px-4 shadow-sm">Yes, Delete Record</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.querySelector('#archTable tbody');
+    
+    searchInput.addEventListener('keyup', function() {
+        const query = this.value.toLowerCase();
+        const rows = tableBody.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+});
+</script>
+
+{% endblock %}

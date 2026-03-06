@@ -1,0 +1,216 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Parishes{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="m-0 text-dark font-weight-bold">
+                        <i class="fas fa-church mr-2 text-success"></i>Parish Registry
+                    </h1>
+                    <p class="text-muted mb-0"><small>Manage local parish congregations and their parent archdeaconries</small></p>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button type="button" class="btn btn-success btn-sm shadow-sm font-weight-bold" data-toggle="modal" data-target="#addParishModal">
+                        <i class="fas fa-plus-circle mr-1"></i> Add New Parish
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="small-box bg-white shadow-sm border-left border-success">
+                        <div class="inner">
+                            <h3>{{ stats.total_count }}</h3>
+                            <p class="text-muted mb-0">Total Registered Parishes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-outline card-success shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-0 font-weight-bold"><i class="fas fa-list mr-2 text-muted"></i>Parish List</h6>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search parishes or archdeaconries...">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="parishTable">
+                            <thead class="bg-light text-muted text-uppercase small">
+                                <tr>
+                                    <th style="width: 80px;">ID</th>
+                                    <th>Parish Name</th>
+                                    <th>Parent Archdeaconry</th>
+                                    <th>Status</th>
+                                    <th class="text-right pr-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in parishes %}
+                                <tr>
+                                    <td><span class="badge badge-light border">#{{ p.id }}</span></td>
+                                    <td><div class="font-weight-bold text-dark">{{ p.name }}</div></td>
+                                    <td><span class="badge badge-primary shadow-sm">{{ p.archdeaconry_name }}</span></td>
+                                    <td>
+                                        {% if p.is_active %}
+                                        <span class="badge badge-success px-3">Active</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary px-3">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-right pr-4">
+                                        <div class="btn-group btn-group-sm border rounded shadow-sm bg-white">
+                                            <button class="btn btn-white text-info" data-toggle="modal" data-target="#editParishModal{{ p.id }}" title="Edit"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-white text-danger" data-toggle="modal" data-target="#deleteParishModal{{ p.id }}" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fas fa-place-of-worship fa-3x mb-3 opacity-50"></i>
+                                        <p>No parishes registered yet.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="addParishModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ url_for('parishes_blueprint.add_parish') }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-plus-circle mr-2"></i>Register Parish</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Parent Archdeaconry <span class="text-danger">*</span></label>
+                        <select name="archdeaconry_id" class="form-control" required>
+                            <option value="">-- Select Archdeaconry --</option>
+                            {% for a in archdeaconries %}
+                            <option value="{{ a.id }}">{{ a.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Parish Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. St. Peters Parish" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Additional details..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4">Save Parish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for p in parishes %}
+<div class="modal fade" id="editParishModal{{ p.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ url_for('parishes_blueprint.edit_parish', parish_id=p.id) }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-2"></i>Modify Parish</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Parent Archdeaconry</label>
+                        <select name="archdeaconry_id" class="form-control" required>
+                            {% for a in archdeaconries %}
+                            <option value="{{ a.id }}" {% if a.id == p.archdeaconry_id %}selected{% endif %}>{{ a.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Parish Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ p.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Description</label>
+                        <textarea name="description" class="form-control" rows="3">{{ p.description }}</textarea>
+                    </div>
+                    <div class="custom-control custom-switch mt-3">
+                        <input type="checkbox" class="custom-control-input" name="is_active" id="activeSw{{ p.id }}" {% if p.is_active %}checked{% endif %}>
+                        <label class="custom-control-label" for="activeSw{{ p.id }}">Status: Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info btn-sm px-4">Update Records</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteParishModal{{ p.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <form action="{{ url_for('parishes_blueprint.delete_parish', parish_id=p.id) }}" method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-trash mr-2"></i>Confirm Deletion</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p>Are you sure you want to delete <strong>{{ p.name }}</strong>?</p>
+                    <p class="small text-muted mb-0">This will only succeed if there are no member records linked to this parish.</p>
+                </div>
+                <div class="modal-footer bg-light justify-content-center">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-dismiss="modal">Keep Record</button>
+                    <button type="submit" class="btn btn-danger btn-sm px-4 shadow">Confirm Delete</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.querySelector('#parishTable tbody');
+    
+    searchInput.addEventListener('keyup', function() {
+        const query = this.value.toLowerCase();
+        const rows = tableBody.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+});
+</script>
+
+{% endblock %}

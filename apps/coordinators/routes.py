@@ -9,41 +9,45 @@ from apps.coordinators import blueprint
 # --- Helpers ---
 
 def get_kampala_time():
-    """Returns current time in Africa/Kampala."""
-    return datetime.now(pytz.timezone("Africa/Kampala"))
+    """Returns current date in Africa/Kampala timezone."""
+    return datetime.now(pytz.timezone("Africa/Kampala")).date()
 
 def get_segment(request):
-    """Extracts the current page name from the request path for UI highlighting."""
+    """Extracts the current page name for UI highlighting."""
     try:
         segment = request.path.split('/')[-1]
         return segment if segment != '' else 'manage_coordinators'
-    except:
+    except Exception:
         return None
 
 # --- Routes ---
 
 @blueprint.route('/manage_coordinators')
 def manage_coordinators():
-    """Displays the departmental hierarchy and coordinator list."""
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-
+    """Displays metrics, coordinator list, and church dropdown data."""
     try:
-        # 1. Aggregate Metrics
-        cursor.execute('''
-            SELECT 
-                COUNT(CoordinatorID) as total_staff,
-                SUM(CASE WHEN IsActive = TRUE THEN 1 ELSE 0 END) as active_staff,
-                SUM(CASE WHEN Position = 'Senior Coordinator' THEN 1 ELSE 0 END) as senior_count
-            FROM coordinator
-        ''')
-        stats = cursor.fetchone()
+        # Using a single context manager for all initial data fetching
+        with get_db_connection() as connection:
+            with connection.cursor(dictionary=True) as cursor:
+                # 1. Aggregate Metrics
+                cursor.execute('''
+                    SELECT 
+                        COUNT(CoordinatorID) as total_staff,
+                        SUM(CASE WHEN IsActive = 1 THEN 1 ELSE 0 END) as active_staff,
+                        SUM(CASE WHEN Position = 'Senior Coordinator' THEN 1 ELSE 0 END) as senior_count
+                    FROM coordinator
+                ''')
+                stats = cursor.fetchone()
 
-        # 2. Fetch Coordinator List
-        cursor.execute('SELECT * FROM coordinator ORDER BY LastName ASC')
-        coordinators = cursor.fetchall()
+                # 2. Fetch Coordinator List
+                cursor.execute('SELECT * FROM coordinator ORDER BY LastName ASC')
+                coordinators = cursor.fetchall()
 
-        # 3. Position Options (Matching SQL ENUM)
+                # 3. Fetch Church List for Modals (using your 'church' table schema)
+                cursor.execute('SELECT id, church_name FROM church WHERE is_active = 1 ORDER BY church_name ASC')
+                churches = cursor.fetchall()
+
+        # Position Options (Matching MariaDB ENUM)
         positions = [
             'Department Head', 'Deputy Head', 'Senior Coordinator', 
             'Coordinator', 'Assistant Coordinator'
@@ -53,6 +57,7 @@ def manage_coordinators():
             'coordinators/coordinator_list.html',
             stats=stats,
             coordinators=coordinators,
+            churches=churches,  # Now correctly passed to template
             positions=positions,
             segment='manage_coordinators'
         )
@@ -60,156 +65,106 @@ def manage_coordinators():
     except Exception as e:
         flash(f"Error loading staff data: {str(e)}", "danger")
         return redirect(url_for('home_blueprint.index'))
-    finally:
-        cursor.close()
-        connection.close()
 
-from flask import request, flash, redirect, url_for
-from datetime import datetime
 
 @blueprint.route('/add_coordinator', methods=['POST'])
 def add_coordinator():
-    """Registers a new staff member with automatic Kampala timestamp."""
+    """Registers a new staff member with automatic Kampala date."""
+    form = request.form
+    first_name = form.get('first_name', '').strip()
+    last_name  = form.get('last_name', '').strip()
+    phone      = form.get('phone', '').strip()
+    position   = form.get('position')
     
-    # 1. Capture and Clean Data
-    first_name = request.form.get('first_name', '').strip()
-    last_name  = request.form.get('last_name', '').strip()
-    phone      = request.form.get('phone', '').strip()
-    position   = request.form.get('position')
-    
-    # Generate the timestamp using your Kampala function
-    kampala_now = get_kampala_time()
-
-    # Optional fields
-    data = {
-        'title':       request.form.get('title'),
-        'first_name':  first_name,
-        'last_name':   last_name,
-        'phone':       phone,
-        'alt_phone':   request.form.get('alt_phone', '').strip() or None,
-        'email':       request.form.get('email', '').strip().lower() or None,
-        'position':    position,
-        'date_joined': kampala_now, # Set to Kampala Time
-        'notes':       request.form.get('notes', '').strip() or None
-    }
-
-    # 2. Validation (Removed date_joined from requirements as it's now automatic)
-    required_fields = ['first_name', 'last_name', 'phone', 'position']
-    if not all(data[field] for field in required_fields):
-        flash("Registration failed: Missing required fields marked with (*).", "warning")
+    if not all([first_name, last_name, phone, position]):
+        flash("Registration failed: Required fields (*) cannot be empty.", "warning")
         return redirect(url_for('coordinators_blueprint.manage_coordinators'))
 
-    # 3. Database Operation
-    connection = get_db_connection()
     try:
-        with connection.cursor() as cursor:
-            sql = '''
-                INSERT INTO coordinator 
-                    (Title, FirstName, LastName, PhoneNumber, AlternativePhone, Email, Position, DateJoined, Notes)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            '''
-            cursor.execute(sql, (
-                data['title'], data['first_name'], data['last_name'], data['phone'],
-                data['alt_phone'], data['email'], data['position'], 
-                data['date_joined'], # Inserted as Africa/Kampala time
-                data['notes']
-            ))
-        
-        connection.commit()
-        flash(f"Success! {data['first_name']} {data['last_name']} added to the registry.", "success")
-        
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                sql = '''
+                    INSERT INTO coordinator 
+                        (Title, FirstName, LastName, PhoneNumber, AlternativePhone, Email, Position, DateJoined, IsActive)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 1)
+                '''
+                cursor.execute(sql, (
+                    form.get('title'),
+                    first_name,
+                    last_name,
+                    phone,
+                    form.get('alt_phone', '').strip() or None,
+                    form.get('email', '').strip().lower() or None,
+                    position,
+                    get_kampala_time(),
+                ))
+            connection.commit()
+            flash(f"Success! {first_name} {last_name} has been registered.", "success")
+            
     except Exception as e:
-        connection.rollback()
-        print(f"Error occurred: {e}") 
-        flash("A database error occurred. Please ensure the email is unique.", "danger")
+        flash(f"Database error: {str(e)}", "danger")
         
-    finally:
-        connection.close()
-
     return redirect(url_for('coordinators_blueprint.manage_coordinators'))
 
-
-
-
-    
 
 @blueprint.route('/edit_coordinator/<int:coord_id>', methods=['POST'])
 def edit_coordinator(coord_id):
     """Updates existing coordinator details."""
-    # Capture and sanitize active status
-    is_active = True if request.form.get('is_active') in ['True', '1', 'on'] else False
-
-    update_values = (
-        request.form.get('title'),
-        request.form.get('first_name'),
-        request.form.get('last_name'),
-        request.form.get('phone'),
-        request.form.get('email'),
-        request.form.get('position'),
-        is_active,
-        coord_id
-    )
-
-    connection = get_db_connection()
-    cursor = connection.cursor()
+    is_active = 1 if request.form.get('is_active') in ['True', '1', 'on'] else 0
 
     try:
-        cursor.execute('''
-            UPDATE coordinator 
-            SET Title = %s, FirstName = %s, LastName = %s, 
-                PhoneNumber = %s, Email = %s, Position = %s, IsActive = %s
-            WHERE CoordinatorID = %s
-        ''', update_values)
-        connection.commit()
-        flash("Staff profile updated successfully.", "info")
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                sql = '''
+                    UPDATE coordinator 
+                    SET Title = %s, FirstName = %s, LastName = %s, 
+                        PhoneNumber = %s, Email = %s, Position = %s, IsActive = %s
+                    WHERE CoordinatorID = %s
+                '''
+                cursor.execute(sql, (
+                    request.form.get('title'),
+                    request.form.get('first_name'),
+                    request.form.get('last_name'),
+                    request.form.get('phone'),
+                    request.form.get('email'),
+                    request.form.get('position'),
+                    is_active,
+                    coord_id
+                ))
+            connection.commit()
+            flash("Staff profile updated successfully.", "info")
     except Exception as e:
-        connection.rollback()
         flash(f"Update failed: {str(e)}", "danger")
-    finally:
-        cursor.close()
-        connection.close()
 
     return redirect(url_for('coordinators_blueprint.manage_coordinators'))
 
 
 @blueprint.route('/delete_coordinator/<int:coord_id>', methods=['POST'])
 def delete_coordinator(coord_id):
-    """Removes a coordinator record if no dependencies exist."""
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
+    """Removes a coordinator record."""
     try:
-        cursor.execute('DELETE FROM coordinator WHERE CoordinatorID = %s', (coord_id,))
-        connection.commit()
-        
-        if cursor.rowcount > 0:
-            flash("Staff member removed from system.", "success")
-        else:
-            flash("Record not found.", "warning")
-            
-    except Exception as e:
-        connection.rollback()
-        # This catch handles the MySQL 'ON DELETE RESTRICT' trigger
-        flash("Cannot delete: This coordinator is still linked to active churches.", "danger")
-    finally:
-        cursor.close()
-        connection.close()
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute('DELETE FROM coordinator WHERE CoordinatorID = %s', (coord_id,))
+                if cursor.rowcount > 0:
+                    connection.commit()
+                    flash("Staff member removed from system.", "success")
+                else:
+                    flash("Record not found.", "warning")
+    except Exception:
+        flash("Action Denied: This coordinator is currently linked to active records.", "danger")
 
     return redirect(url_for('coordinators_blueprint.manage_coordinators'))
-
 
 # --- Generic Routing ---
 
 @blueprint.route('/<template>')
 def route_template(template):
-    """Dynamic routing for coordinator templates."""
     try:
         if not template.endswith('.html'):
             template += '.html'
-
         segment = get_segment(request)
         return render_template(f"coordinators/{template}", segment=segment)
-
     except TemplateNotFound:
         return render_template('home/page-404.html'), 404
     except Exception:

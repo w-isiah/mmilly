@@ -67,7 +67,9 @@ def format_date(date_data, format_string='%Y-%m-%d'):
 def register_blueprints(app):
     """Register all blueprints dynamically from the apps module."""
     modules = [
-        'authentication', 'church','home','password_reset','pwd','coordinators'
+        'authentication', 'church','home','password_reset','pwd',
+        'lay_reader','coordinators','disability_types','archdeaconries',
+        'dioceses','parishes','clergy'
     ]
 
     for module_name in modules:

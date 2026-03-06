@@ -1,0 +1,142 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Dioceses{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="m-0 text-dark font-weight-bold">
+                        <i class="fas fa-landmark mr-2 text-warning"></i>Diocese Registry
+                    </h1>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button type="button" class="btn btn-warning btn-sm shadow-sm font-weight-bold" data-toggle="modal" data-target="#addDioceseModal">
+                        <i class="fas fa-plus-circle mr-1"></i> Add New Diocese
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="card card-outline card-warning shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="dioceseTable">
+                            <thead class="bg-light text-muted small">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>DIOCESE NAME</th>
+                                    <th>DESCRIPTION</th>
+                                    <th>DATE CREATED</th>
+                                    <th class="text-right pr-4">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for d in dioceses %}
+                                <tr>
+                                    <td><span class="badge badge-light border">#DIO-{{ d.id }}</span></td>
+                                    <td><strong class="text-dark">{{ d.name }}</strong></td>
+                                    <td><small class="text-muted">{{ d.description or 'N/A' }}</small></td>
+                                    <td>{{ d.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td class="text-right pr-4">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-white text-info" data-toggle="modal" data-target="#editDioceseModal{{ d.id }}"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-white text-danger" data-toggle="modal" data-target="#deleteDioceseModal{{ d.id }}"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="addDioceseModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <form action="{{ url_for('dioceses_blueprint.add_diocese') }}" method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title font-weight-bold">Register Diocese</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold">NAME</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">DESCRIPTION</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="submit" class="btn btn-warning btn-sm px-4">Save Diocese</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% for d in dioceses %}
+<div class="modal fade" id="editDioceseModal{{ d.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <form action="{{ url_for('dioceses_blueprint.edit_diocese', diocese_id=d.id) }}" method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fas fa-edit mr-2"></i>Update {{ d.name }}</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold">DIOCESE NAME</label>
+                        <input type="text" name="name" class="form-control" value="{{ d.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">DESCRIPTION</label>
+                        <textarea name="description" class="form-control" rows="3">{{ d.description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-info btn-sm px-4">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteDioceseModal{{ d.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <form action="{{ url_for('dioceses_blueprint.delete_diocese', diocese_id=d.id) }}" method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Confirm Delete</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p>Are you sure you want to delete the <strong>{{ d.name }}</strong>?</p>
+                    <small class="text-muted">This will fail if any Archdeaconries are still linked to it.</small>
+                </div>
+                <div class="modal-footer bg-light justify-content-center">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm px-4">Yes, Delete</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
