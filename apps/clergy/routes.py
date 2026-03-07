@@ -1,7 +1,8 @@
 import pytz
 from datetime import datetime
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash,session
 from jinja2 import TemplateNotFound
+from apps.utils.decorators import login_required  # Adjust path as needed
 
 from apps import get_db_connection
 from apps.clergy import blueprint
@@ -22,34 +23,83 @@ def get_segment(request):
 
 # --- Routes ---
 
+
+
+
+
 @blueprint.route('/manage_clergy')
+@login_required
 def manage_clergy():
-    """Displays the clergy list joined with the churches table."""
+    """Displays the clergy list joined with churches and parishes."""
     try:
         with get_db_connection() as connection:
             with connection.cursor(dictionary=True) as cursor:
-                # Joined with 'churches' table as per your schema
+                # Note: p.name aliased to parish_name to match your schema
                 cursor.execute('''
-                    SELECT c.*, ch.church_name 
+                    SELECT c.*, ch.church_name, p.name AS parish_name
                     FROM clergy c
                     LEFT JOIN church ch ON c.church_id = ch.id
+                    LEFT JOIN parishes p ON c.parish_id = p.id
                     ORDER BY c.last_name ASC, c.first_name ASC
                 ''')
                 clergy_list = cursor.fetchall()
 
-                # Fetching active churches for dropdown menus
-                cursor.execute('SELECT id, church_name FROM church ORDER BY church_name ASC')
+                # Active churches
+                cursor.execute('SELECT id, church_name FROM church WHERE is_active = 1 ORDER BY church_name ASC')
                 churches = cursor.fetchall()
+
+                # Parishes (using 'name' from your schema)
+                cursor.execute('SELECT id, name FROM parishes WHERE is_active = 1 ORDER BY name ASC')
+                parishes = cursor.fetchall()
 
         return render_template(
             'clergy/clergy_list.html',
             clergy_list=clergy_list,
             churches=churches,
+            parishes=parishes,
             segment='manage_clergy'
         )
     except Exception as e:
         flash(f"Database Error: {str(e)}", "danger")
         return redirect(url_for('home_blueprint.index'))
+
+
+        
+
+@blueprint.route('/assign_clergy/<int:clergy_id>', methods=['POST'])
+@login_required
+def assign_clergy(clergy_id):
+    """Updates clergy assignment to either a Parish or a Church exclusively."""
+    assignment_type = request.form.get('assignment_type') 
+    assigned_id = request.form.get('assigned_id')
+    
+    # Initialize both as None to ensure exclusivity
+    parish_id = None
+    church_id = None
+
+    if assignment_type == 'parish' and assigned_id:
+        parish_id = assigned_id
+    elif assignment_type == 'church' and assigned_id:
+        church_id = assigned_id
+    
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute('''
+                    UPDATE clergy 
+                    SET parish_id = %s, church_id = %s 
+                    WHERE id = %s
+                ''', (parish_id, church_id, clergy_id))
+            conn.commit()
+            flash("Clergy posting updated successfully.", "success")
+    except Exception as e:
+        flash(f"Error updating posting: {str(e)}", "danger")
+    
+    return redirect(url_for('clergy_blueprint.manage_clergy'))
+
+
+
+
 
 @blueprint.route('/add_clergy', methods=['POST'])
 def add_clergy():

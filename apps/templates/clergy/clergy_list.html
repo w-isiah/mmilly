@@ -27,7 +27,7 @@
                 <div class="card-header bg-white">
                     <div class="card-tools">
                         <div class="input-group input-group-sm" style="width: 250px;">
-                            <input type="text" id="clergySearch" class="form-control" placeholder="Search clergy or church...">
+                            <input type="text" id="clergySearch" class="form-control" placeholder="Search clergy, parish or church...">
                             <div class="input-group-append">
                                 <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
                             </div>
@@ -40,8 +40,7 @@
                             <thead class="bg-light small text-uppercase">
                                 <tr>
                                     <th class="pl-4">Name & Title</th>
-                                    <th>Assigned Church</th>
-                                    <th>Gender</th>
+                                    <th>Current Posting</th>
                                     <th>Contact Details</th>
                                     <th class="text-center">Status</th>
                                     <th class="text-right pr-4">Actions</th>
@@ -52,31 +51,37 @@
                                 <tr>
                                     <td class="pl-4">
                                         <div class="font-weight-bold text-dark">{{ person.title }} {{ person.last_name }} {{ person.first_name }}</div>
-                                        <div class="small text-muted">{{ person.other_names or '' }}</div>
+                                        <div class="small text-muted">{{ person.gender }} | {{ person.other_names or '' }}</div>
                                     </td>
                                     <td>
-                                        {% if person.church_name %}
-                                            <span class="badge badge-light border text-indigo px-2 py-1">
-                                                <i class="fas fa-church mr-1"></i>{{ person.church_name }}
-                                            </span>
+                                        {% if person.parish_name %}
+                                        <span class="badge border border-purple text-purple px-2 py-1" style="color: #6f42c1; border-color: #6f42c1;">
+                                            <i class="fas fa-landmark mr-1"></i> Parish: {{ person.parish_name }}
+                                        </span>
+                                        {% elif person.church_name %}
+                                        <span class="badge border border-info text-info px-2 py-1">
+                                            <i class="fas fa-church mr-1"></i> {{ person.church_name }}
+                                        </span>
                                         {% else %}
-                                            <span class="text-muted small italic">Unassigned</span>
+                                        <span class="text-muted small"><i>Unposted / Retired</i></span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-muted small">{{ person.gender }}</td>
                                     <td>
                                         <div class="small"><i class="fas fa-phone mr-1 text-xs text-muted"></i> {{ person.phone_number or 'N/A' }}</div>
                                         <div class="small"><i class="fas fa-envelope mr-1 text-xs text-muted"></i> {{ person.email or 'N/A' }}</div>
                                     </td>
                                     <td class="text-center">
                                         {% if person.is_active %}
-                                            <span class="badge badge-success px-3 shadow-xs">Active</span>
+                                        <span class="badge badge-success px-3 shadow-xs">Active</span>
                                         {% else %}
-                                            <span class="badge badge-secondary px-3">Inactive</span>
+                                        <span class="badge badge-secondary px-3">Inactive</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-right pr-4">
                                         <div class="btn-group btn-group-sm border rounded shadow-sm">
+                                            <button class="btn btn-white text-indigo" data-toggle="modal" data-target="#assignClergyModal{{ person.id }}" title="Update Posting">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                            </button>
                                             <button class="btn btn-white text-info" data-toggle="modal" data-target="#editClergyModal{{ person.id }}" title="Edit Profile">
                                                 <i class="fas fa-edit"></i>
                                             </button>
@@ -88,7 +93,7 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
+                                    <td colspan="5" class="text-center py-5 text-muted">
                                         <i class="fas fa-user-friends fa-3x mb-3 opacity-50"></i>
                                         <p>No clergy members found in the database.</p>
                                     </td>
@@ -147,23 +152,15 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 form-group">
-                            <label class="small font-weight-bold text-uppercase">Church Assignment</label>
-                            <select name="church_id" class="form-control border-indigo">
-                                <option value="">-- Select Church --</option>
-                                {% for ch in churches %}
-                                <option value="{{ ch.id }}">{{ ch.church_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6 form-group">
                             <label class="small font-weight-bold text-uppercase">Phone Number</label>
                             <input type="text" name="phone_number" class="form-control">
                         </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold text-uppercase">Email Address</label>
+                            <input type="email" name="email" class="form-control">
+                        </div>
                     </div>
-                    <div class="form-group mb-0">
-                        <label class="small font-weight-bold text-uppercase">Email Address</label>
-                        <input type="email" name="email" class="form-control">
-                    </div>
+                    <p class="text-muted small mt-2"><i class="fas fa-info-circle mr-1"></i> Postings (Parish/Church) can be assigned after registration using the map icon.</p>
                 </div>
                 <div class="modal-footer bg-light mt-3">
                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
@@ -175,13 +172,61 @@
 </div>
 
 {% for person in clergy_list %}
+<div class="modal fade" id="assignClergyModal{{ person.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm shadow-lg" role="document">
+        <div class="modal-content border-0">
+            <form action="{{ url_for('clergy_blueprint.assign_clergy', clergy_id=person.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-indigo text-white">
+                    <h6 class="modal-title font-weight-bold"><i class="fas fa-map-marked-alt mr-2"></i>Update Posting</h6>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Posting Level</label>
+                        <select name="assignment_type" class="form-control form-control-sm mb-3" 
+                        onchange="toggleClergyAssignment({{ person.id }}, this.value)">
+                        <option value="none" {% if not person.parish_id and not person.church_id %}selected{% endif %}>❌ Unassigned / Retired</option>
+                        <option value="parish" {% if person.parish_id %}selected{% endif %}>🏛️ Parish Posting</option>
+                        <option value="church" {% if person.church_id %}selected{% endif %}>⛪ Local Church Posting</option>
+                    </select>
+                </div>
+
+                <div id="p_div{{ person.id }}" style="display: {% if person.parish_id %}block{% else %}none{% endif %};">
+                    <label class="small font-weight-bold">SELECT PARISH</label>
+                    <select name="assigned_id" class="form-control form-control-sm" {% if not person.parish_id %}disabled{% endif %}>
+                        {% for p in parishes %}
+                        {# Use p.name here to match your 'describe parishes' output #}
+                        <option value="{{ p.id }}" {% if person.parish_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+
+                <div id="c_div{{ person.id }}" style="display: {% if person.church_id %}block{% else %}none{% endif %};">
+                    <label class="small font-weight-bold">SELECT CHURCH</label>
+                    <select name="assigned_id" class="form-control form-control-sm" {% if not person.church_id %}disabled{% endif %}>
+                        {% for c in churches %}
+                        <option value="{{ c.id }}" {% if person.church_id == c.id %}selected{% endif %}>{{ c.church_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer p-2">
+                <button type="submit" class="btn btn-indigo btn-block btn-sm text-white font-weight-bold">Confirm Posting</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
 <div class="modal fade" id="editClergyModal{{ person.id }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg shadow-lg" role="document">
         <form action="{{ url_for('clergy_blueprint.edit_clergy', id=person.id) }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="modal-content border-0">
                 <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-2"></i>Update {{ person.last_name }}'s Profile</h5>
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-2"></i>Update Profile</h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
@@ -201,27 +246,12 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 form-group">
-                            <label class="small font-weight-bold text-uppercase">Other Names</label>
-                            <input type="text" name="other_names" class="form-control shadow-sm" value="{{ person.other_names or '' }}">
+                            <label class="small font-weight-bold">PHONE</label>
+                            <input type="text" name="phone_number" class="form-control shadow-sm" value="{{ person.phone_number or '' }}">
                         </div>
                         <div class="col-md-6 form-group">
                             <label class="small font-weight-bold text-uppercase">Email</label>
                             <input type="email" name="email" class="form-control shadow-sm" value="{{ person.email or '' }}">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="small font-weight-bold">PHONE NUMBER</label>
-                            <input type="text" name="phone_number" class="form-control shadow-sm" value="{{ person.phone_number or '' }}">
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label class="small font-weight-bold text-uppercase">Church Assignment</label>
-                            <select name="church_id" class="form-control shadow-sm">
-                                <option value="">No specific church</option>
-                                {% for ch in churches %}
-                                <option value="{{ ch.id }}" {% if person.church_id == ch.id %}selected{% endif %}>{{ ch.church_name }}</option>
-                                {% endfor %}
-                            </select>
                         </div>
                     </div>
                     <hr>
@@ -243,17 +273,13 @@
     <div class="modal-dialog modal-sm shadow-lg" role="document">
         <div class="modal-content border-0">
             <div class="modal-body text-center py-4">
-                <div class="mb-3">
-                    <i class="fas fa-exclamation-circle text-danger fa-4x animate__animated animate__pulse animate__infinite"></i>
-                </div>
+                <div class="mb-3"><i class="fas fa-exclamation-circle text-danger fa-4x animate__animated animate__pulse animate__infinite"></i></div>
                 <h5 class="font-weight-bold">Confirm Deletion</h5>
-                <p class="text-muted small">This will permanently remove <strong>{{ person.title }} {{ person.last_name }}</strong> from the registry.</p>
+                <p class="text-muted small">Permanently remove <strong>{{ person.title }} {{ person.last_name }}</strong>?</p>
                 <form action="{{ url_for('clergy_blueprint.delete_clergy', id=person.id) }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mt-4">
-                        <button type="button" class="btn btn-light btn-sm mr-2 shadow-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger btn-sm px-3 shadow-sm font-weight-bold">Delete Record</button>
-                    </div>
+                    <button type="button" class="btn btn-light btn-sm mr-2 shadow-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm px-3 shadow-sm font-weight-bold">Delete Record</button>
                 </form>
             </div>
         </div>
@@ -266,12 +292,13 @@
     .btn-indigo { background-color: #6610f2; border-color: #6610f2; color: white; transition: 0.3s; }
     .btn-indigo:hover { background-color: #520dc2; color: white; transform: translateY(-1px); }
     .card-indigo.card-outline { border-top: 3px solid #6610f2; }
-    .table thead th { border-top: 0; border-bottom-width: 1px; }
     .btn-white { background: #fff; border: 1px solid #dee2e6; }
     .btn-white:hover { background: #f8f9fa; }
+    .text-purple { color: #6f42c1; }
 </style>
 
 <script>
+    // Search functionality
     document.getElementById('clergySearch').addEventListener('keyup', function() {
         let filter = this.value.toLowerCase();
         let rows = document.querySelectorAll('#clergyTable tbody tr');
@@ -280,5 +307,26 @@
             row.style.display = text.includes(filter) ? '' : 'none';
         });
     });
+
+    // Modal toggle logic
+    function toggleClergyAssignment(id, val) {
+        const pDiv = document.getElementById('p_div' + id);
+        const cDiv = document.getElementById('c_div' + id);
+        const pSelect = pDiv.querySelector('select');
+        const cSelect = cDiv.querySelector('select');
+
+        pDiv.style.display = 'none';
+        cDiv.style.display = 'none';
+        pSelect.disabled = true;
+        cSelect.disabled = true;
+
+        if (val === 'parish') {
+            pDiv.style.display = 'block';
+            pSelect.disabled = false;
+        } else if (val === 'church') {
+            cDiv.style.display = 'block';
+            cSelect.disabled = false;
+        }
+    }
 </script>
 {% endblock %}
