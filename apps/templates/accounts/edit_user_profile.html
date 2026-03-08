@@ -1,200 +1,235 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Edit Profile {% endblock %}
-{% block body_class %}sidebar-mini layout-fixed layout-navbar-fixed{% endblock %}
+{% block title %}Edit Profile{% endblock %}
+
+{% block body_class %}sidebar-mini layout-fixed{% endblock %}
+
 
 {% block stylesheets %}
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-  <link rel="stylesheet" href="/static/assets/plugins/fontawesome-free/css/all.min.css">
-  <link rel="stylesheet" href="/static/assets/plugins/select2/css/select2.min.css">
-  <link rel="stylesheet" href="/static/assets/css/adminlte.min.css">
-  <style>
-    .profile-user-img-edit {
-      width: 120px;
-      height: 120px;
-      object-fit: cover;
-      border: 3px solid #adb5bd;
-    }
-    .form-section-header {
-      font-weight: 700;
-      color: #495057;
-      border-bottom: 2px solid #007bff;
-      margin-bottom: 20px;
-      padding-bottom: 5px;
-      display: inline-block;
-    }
-  </style>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/plugins/select2/css/select2.min.css') }}">
+
+<style>
+
+  .profile-user-img-edit{
+    width:120px;
+    height:120px;
+    object-fit:cover;
+    border:3px solid #adb5bd;
+  }
+
+  .form-section-header{
+    font-weight:700;
+    border-bottom:2px solid #007bff;
+    margin-bottom:20px;
+    padding-bottom:5px;
+    display:inline-block;
+  }
+
+</style>
+
 {% endblock %}
 
+
+
 {% block content %}
+
 <div class="content-wrapper">
-  
+
   <section class="content-header">
+
     <div class="container-fluid">
+
       <div class="row mb-2">
+
         <div class="col-sm-6">
-          <h1 class="text-bold">My Profile Settings</h1>
+          <h1>My Profile</h1>
         </div>
+
         <div class="col-sm-6 text-right">
-          <span class="badge badge-info p-2">Account ID: #{{ user.id }}</span>
+          <span class="badge badge-info">
+            Account ID #{{ user.id }}
+          </span>
         </div>
+
       </div>
+
     </div>
+
   </section>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="container-fluid">
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-info-circle mr-2"></i> {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+
 
   <section class="content">
+
     <div class="container-fluid">
+
       <div class="row">
-        
+
         <div class="col-md-3">
+
           <div class="card card-primary card-outline">
-            <div class="card-body box-profile">
-              <div class="text-center">
-                {% if user.profile_image %}
-                  <img class="profile-user-img img-fluid img-circle profile-user-img-edit"
-                       src="/static/uploads/{{ user.profile_image }}" alt="User profile picture">
-                {% else %}
-                  <img class="profile-user-img img-fluid img-circle profile-user-img-edit"
-                       src="/static/assets/img/default-avatar.png" alt="Default avatar">
-                {% endif %}
-              </div>
-              <h3 class="profile-username text-center mt-3">{{ user.first_name }} {{ user.last_name }}</h3>
-              <p class="text-muted text-center text-uppercase small">{{ user.role }}</p>
+
+            <div class="card-body text-center">
+
+              {% if user.profile_image %}
+              <img class="profile-user-img img-fluid img-circle profile-user-img-edit"
+              src="{{ url_for('static', filename='uploads/' + user.profile_image) }}">
+              {% else %}
+              <img class="profile-user-img img-fluid img-circle profile-user-img-edit"
+              src="{{ url_for('static', filename='assets/img/default-avatar.png') }}">
+              {% endif %}
+
+              <h3 class="mt-3">
+                {{ user.first_name }} {{ user.last_name }}
+              </h3>
+
+              <p class="text-muted">
+                {{ user.role }}
+              </p>
+
             </div>
+
           </div>
+
         </div>
 
+
+
         <div class="col-md-9">
-          <div class="card shadow-sm">
-            <div class="card-header p-2 bg-white">
-              <ul class="nav nav-pills">
-                <li class="nav-item"><a class="nav-link active" href="#settings" data-toggle="tab">Personal Details</a></li>
-              </ul>
-            </div>
-            
-            <form action="{{ url_for('authentication_blueprint.edit_user_profile', id=user.id) }}" method="POST" enctype="multipart/form-data">
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-              
-              <div class="card-body">
-                <div class="tab-content">
-                  <div class="active tab-pane" id="settings">
-                    
-                    <h5 class="form-section-header">Basic Information</h5>
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="username"><i class="fas fa-at mr-1 text-muted"></i> Username</label>
-                          <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="other_name">Middle/Other Name</label>
-                          <input type="text" class="form-control" id="other_name" name="other_name" value="{{ user.other_name }}">
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="first_name">First Name</label>
-                          <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}" required>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="last_name">Last Name</label>
-                          <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}" required>
-                        </div>
-                      </div>
-                    </div>
 
-                    <h5 class="form-section-header mt-4">Security</h5>
-                    <div class="row">
-                      <div class="col-md-8">
-                        <div class="form-group">
-                          <label for="password">Change Password</label>
-                          <div class="input-group">
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Leave blank to keep current password">
-                            <div class="input-group-append">
-                              <span class="input-group-text bg-white">
-                                <input type="checkbox" id="show_password"> <small class="ml-1">Show</small>
-                              </span>
-                            </div>
-                          </div>
-                          <small class="text-muted italic">Only fill this if you want to change your login credentials.</small>
-                        </div>
-                      </div>
-                    </div>
+          <div class="card">
 
-                    <h5 class="form-section-header mt-4">Media</h5>
-                    <div class="row">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label for="profile_image">Update Profile Picture</label>
-                          <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="profile_image" name="profile_image" accept="image/*">
-                            <label class="custom-file-label" for="profile_image">Choose new image...</label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+            <form method="POST"
+            action="{{ url_for('authentication_blueprint.edit_user_profile', id=user.id) }}"
+            enctype="multipart/form-data">
 
-                  </div>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+            <div class="card-body">
+
+              <h5 class="form-section-header">Basic Information</h5>
+
+              <div class="row">
+
+                <div class="col-md-6">
+
+                  <label>Username</label>
+
+                  <input class="form-control"
+                  name="username"
+                  value="{{ user.username }}"
+                  required>
+
                 </div>
+
+
+                <div class="col-md-6">
+
+                  <label>Other Name</label>
+
+                  <input class="form-control"
+                  name="other_name"
+                  value="{{ user.other_name }}">
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                  <label>First Name</label>
+
+                  <input class="form-control"
+                  name="first_name"
+                  value="{{ user.first_name }}"
+                  required>
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                  <label>Last Name</label>
+
+                  <input class="form-control"
+                  name="last_name"
+                  value="{{ user.last_name }}"
+                  required>
+
+                </div>
+
               </div>
 
-              <div class="card-footer bg-light">
-                <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                  <i class="fas fa-save mr-1"></i> Update My Profile
-                </button>
-                <a href="/index" class="btn btn-link text-muted">Cancel</a>
-              </div>
-            </form>
-          </div>
+
+
+              <h5 class="form-section-header mt-4">Security</h5>
+
+              <input type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              placeholder="Leave blank to keep password">
+
+
+
+              <h5 class="form-section-header mt-4">Profile Image</h5>
+
+              <input type="file"
+              class="form-control"
+              name="profile_image"
+              accept="image/*">
+
+            </div>
+
+
+
+            <div class="card-footer">
+
+              <button class="btn btn-primary">
+
+                <i class="fas fa-save"></i>
+                Update Profile
+
+              </button>
+
+            </div>
+
+          </form>
+
         </div>
 
       </div>
+
     </div>
-  </section>
+
+  </div>
+
+</section>
+
 </div>
-{% endblock content %}
+
+{% endblock %}
+
+
 
 {% block javascripts %}
-<script src="/static/assets/plugins/jquery/jquery.min.js"></script>
-<script src="/static/assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="/static/assets/plugins/bs-custom-file-input/bs-custom-file-input.min.js"></script>
-<script src="/static/assets/js/adminlte.min.js"></script>
+
+<script src="{{ url_for('static', filename='assets/plugins/bs-custom-file-input/bs-custom-file-input.min.js') }}"></script>
 
 <script>
-  $(function () {
-    // Initialize custom file browser
+
+  $(function(){
+
     bsCustomFileInput.init();
 
-    // Password Visibility Toggle
-    $('#show_password').on('change', function () {
-      $('#password').attr('type', this.checked ? 'text' : 'password');
+    $("#show_password").on("change",function(){
+
+      $("#password").attr("type",this.checked?"text":"password");
+
     });
 
-    // Fade out alerts
-    setTimeout(function() {
-        $(".alert").fadeTo(500, 0).slideUp(500, function(){
-            $(this).remove(); 
-        });
-    }, 4000);
   });
+
 </script>
-{% endblock javascripts %}
+
+{% endblock %}
