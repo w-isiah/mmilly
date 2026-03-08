@@ -635,23 +635,49 @@ def handle_sign_image(cursor, sign_image, user_id):
 
 
 
+from PIL import Image
+import os
+from flask import request, current_app
+from werkzeug.utils import secure_filename
+
 def handle_profile_image(cursor, profile_image, user_id):
     # Check if a profile image is provided and it's a valid file type
     if profile_image and allowed_file(profile_image.filename):
+        # 1. Secure the filename
         filename = secure_filename(profile_image.filename)
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         
-        # Save the image to the specified upload folder
-        profile_image.save(file_path)
+        # 2. Open the image using Pillow
+        img = Image.open(profile_image)
+
+        # 3. Get crop coordinates from the form (sent via JS/Hidden Inputs)
+        try:
+            # These names must match the 'name' attribute in your HTML inputs
+            x = float(request.form.get('crop_x', 0))
+            y = float(request.form.get('crop_y', 0))
+            w = float(request.form.get('crop_w', 0))
+            h = float(request.form.get('crop_h', 0))
+
+            # Only crop if we actually have dimensions to work with
+            if w > 0 and h > 0:
+                # Pillow uses (left, top, right, bottom)
+                img = img.crop((x, y, x + w, y + h))
+        except (ValueError, TypeError):
+            # If coordinates are missing or invalid, we just save the full image
+            pass
+
+        # 4. Optional: Force a standard size (e.g., 400x400) for UI consistency
+        # img = img.resize((400, 400), Image.LANCZOS)
         
-        # Return the filename to save in the database
+        # 5. Save the processed image
+        img.save(file_path)
+        
         return filename
+    
     else:
         # If no new image, fetch the existing profile image from the DB
         cursor.execute('SELECT profile_image FROM users WHERE id = %s', (user_id,))
         result = cursor.fetchone()
-        
-        # Return the existing profile image filename or None if not found
         return result['profile_image'] if result else None
 
 
