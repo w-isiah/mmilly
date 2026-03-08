@@ -65,7 +65,7 @@
 
         <div class="col-md-9">
           <div class="card">
-            <form action="{{ url_for('authentication_blueprint.edit_user', id=user.id) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ url_for('authentication_blueprint.edit_user_profile', id=user.id) }}" method="POST" enctype="multipart/form-data">
               <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
               
               <input type="hidden" name="crop_x" id="crop_x"> <input type="hidden" name="crop_y" id="crop_y">
@@ -76,37 +76,23 @@
               <div class="card-body">
                 <h5 class="form-section-header">Personal Information</h5>
                 <div class="row">
-                  <div class="col-md-4 form-group">
+                  <div class="col-md-6 form-group">
                     <label>Username</label>
                     <input class="form-control" name="username" value="{{ user.username }}" required>
                   </div>
-                  <div class="col-md-4 form-group">
+                  <div class="col-md-6 form-group">
+                    <label>Other Name</label>
+                    <input class="form-control" name="other_name" value="{{ user.other_name or '' }}">
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 form-group">
                     <label>First Name</label>
                     <input class="form-control" name="first_name" value="{{ user.first_name }}" required>
                   </div>
-                  <div class="col-md-4 form-group">
+                  <div class="col-md-6 form-group">
                     <label>Last Name</label>
                     <input class="form-control" name="last_name" value="{{ user.last_name }}" required>
-                  </div>
-                </div>
-
-                <h5 class="form-section-header mt-3">Access Permissions</h5>
-                <div class="row">
-                  <div class="col-md-6 form-group">
-                    <label>Primary Role</label>
-                    <select class="form-control select2bs4" name="role" required>
-                      <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Administrator</option>
-                      <option value="director" {% if user.role == 'director' %}selected{% endif %}>Director</option>
-                      <option value="Head_ICT" {% if user.role == 'Head_ICT' %}selected{% endif %}>Head of ICT</option>
-                      <option value="other" {% if user.role == 'other' %}selected{% endif %}>Staff / Other</option>
-                    </select>
-                  </div>
-                  <div class="col-md-6 form-group">
-                    <label>Secondary Role</label>
-                    <select class="form-control select2bs4" name="role1">
-                      <option value="None" {% if not user.role1 or user.role1 == 'None' %}selected{% endif %}>None</option>
-                      <option value="teacher" {% if user.role1 == 'teacher' %}selected{% endif %}>Teacher/Field</option>
-                    </select>
                   </div>
                 </div>
 
@@ -115,14 +101,14 @@
                   <div class="col-md-6 form-group">
                     <label>Change Profile Image</label>
                     <div class="custom-file">
-                      <input type="file" class="custom-file-input crop-trigger" name="profile_image" accept="image/*" data-aspect="1" data-prefix="crop" data-preview="preview-profile">
+                      <input type="file" class="custom-file-input crop-trigger" name="profile_image" accept="image/*" data-aspect="1" data-prefix="crop">
                       <label class="custom-file-label">Choose file...</label>
                     </div>
                   </div>
                   <div class="col-md-6 form-group">
                     <label>Change Signature</label>
                     <div class="custom-file">
-                      <input type="file" class="custom-file-input crop-trigger" name="sign_image" accept="image/*" data-aspect="3.125" data-prefix="sign" data-preview="preview-sign">
+                      <input type="file" class="custom-file-input crop-trigger" name="sign_image" accept="image/*" data-aspect="3.125" data-prefix="sign">
                       <label class="custom-file-label">Choose file...</label>
                     </div>
                   </div>
@@ -130,16 +116,16 @@
 
                 <h5 class="form-section-header mt-3">Security</h5>
                 <div class="row">
-                    <div class="col-md-12 form-group">
-                        <label>New Password</label>
-                        <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current password">
-                    </div>
+                  <div class="col-md-12 form-group">
+                    <label>New Password</label>
+                    <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current password">
+                  </div>
                 </div>
               </div>
 
               <div class="card-footer bg-light">
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save Changes</button>
-                <a href="/manage_users" class="btn btn-default float-right">Cancel</a>
+                <a href="{{ url_for('home_blueprint.index') }}" class="btn btn-default float-right">Cancel</a>
               </div>
             </form>
           </div>
@@ -180,36 +166,30 @@
 {% endblock %}
 
 {% block javascripts %}
-<script src="{{ url_for('static', filename='assets/plugins/select2/js/select2.full.min.js') }}"></script>
 <script src="{{ url_for('static', filename='assets/plugins/bs-custom-file-input/bs-custom-file-input.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
 $(function () {
   bsCustomFileInput.init();
-  $('.select2bs4').select2({ theme: 'bootstrap4' });
 
   let cropper;
   let activePrefix;
 
-  // 1. Viewer Logic
   $('.viewer-trigger').on('click', function() {
     $('#full-size-view').attr('src', $(this).attr('src'));
     $('#viewerModal').modal('show');
   });
 
-  // 2. Cropper Logic
   $('.crop-trigger').on('change', function(e) {
     const file = e.target.files[0];
     activePrefix = $(this).data('prefix');
     const aspect = $(this).data('aspect');
-    const previewSize = activePrefix === 'crop' ? '150px' : '250px x 80px';
     
     if (file) {
       const reader = new FileReader();
       reader.onload = function(event) {
         $('#imageToCrop').attr('src', event.target.result);
-        // Adjust preview box shape
         if(activePrefix === 'crop') {
             $('#cropPreview').css({'width': '150px', 'height': '150px', 'border-radius': '50%'});
         } else {
@@ -238,11 +218,9 @@ $(function () {
     $(`#${activePrefix}_w`).val(Math.round(data.width));
     $(`#${activePrefix}_h`).val(Math.round(data.height));
     
-    // Update the sidebar preview instantly
     const canvas = cropper.getCroppedCanvas();
     const targetImg = activePrefix === 'crop' ? '#current-profile-preview' : '#current-sign-preview';
     $(targetImg).attr('src', canvas.toDataURL());
-    
     $('#cropperModal').modal('hide');
   });
 });

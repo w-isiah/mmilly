@@ -14,27 +14,7 @@
 </a>
 </li>
 
-{% if session.get('assigned_db') %}
-<li class="nav-item d-none d-lg-inline-block ml-2">
-<span class="nav-link">
-<span class="badge badge-info">
-<i class="fas fa-database"></i>
-{{ session.get('assigned_db').replace('_',' ').title() }}
-</span>
-</span>
-</li>
-{% endif %}
 
-{% if session.get('role') %}
-<li class="nav-item d-none d-lg-inline-block">
-<span class="nav-link">
-<span class="badge badge-success">
-<i class="fas fa-user-tag"></i>
-{{ session.get('role').replace('_',' ').title() }}
-</span>
-</span>
-</li>
-{% endif %}
 
 </ul>
 

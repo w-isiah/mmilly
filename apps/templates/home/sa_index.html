@@ -1,40 +1,35 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Ministry Dashboard {% endblock %}
-
-{% block body_class %} sidebar-mini {% endblock %}
-
-{% block stylesheets %}
-  {{ super() }}
-  <style>
-    .alert-container {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      width: 70%;
-    }
-    .bg-church-gradient {
-      background: linear-gradient(45deg, #4e085e, #8e24aa); /* Anglican Purple Theme */
-      color: white;
-    }
-    .info-box-text {
-      text-transform: uppercase;
-      font-size: 0.8rem;
-      letter-spacing: 0.5px;
-      color: #6c757d;
-    }
-  </style>
-{% endblock stylesheets %}
+{% block title %}Super Admin Dashboard{% endblock %}
+{% block body_class %}sidebar-mini layout-fixed{% endblock %}
 
 {% block content %}
 <div class="content-wrapper">
+
+  {% if session.get('role') == 'super_admin' %}
+
+  <!-- Flash messages -->
+  <div class="container-fluid mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Header -->
   <div class="content-header">
     <div class="container-fluid">
       <div class="row mb-2">
         <div class="col-sm-6">
-          <h1 class="m-0 text-bold text-dark">Ministry Dashboard</h1>
+          <h1 class="m-0">Super Admin Dashboard</h1>
         </div>
         <div class="col-sm-6">
           <ol class="breadcrumb float-sm-right">
@@ -46,91 +41,147 @@
     </div>
   </div>
 
+  <!-- Main content -->
   <section class="content">
     <div class="container-fluid">
 
-      <div class="callout callout-info bg-church-gradient border-0 shadow-sm mb-4">
-        <h5><i class="fas fa-cross mr-2"></i> Welcome, {{ session.get('first_name', 'Servant') }}!</h5>
-        <p class="mb-0">
-          Diocese/Parish: <b>{{ session.get('assigned_db', 'General').replace('_', ' ').title() }}</b> | 
-          Role: <b>{{ session.get('role', 'User').replace('_', ' ').title() }}</b>
+      <!-- Welcome card -->
+      <div class="callout callout-info mb-4">
+        <h5>Welcome back, {{ session.get('first_name', 'Admin') }}!</h5>
+        <p>
+          <i class="fas fa-calendar-alt"></i>
+          {{ now.strftime('%A, %B %d, %Y') if now else '' }}
+          <span class="badge badge-success ml-2"><i class="fas fa-circle"></i> System Online</span>
         </p>
       </div>
 
+      <!-- Church hierarchy stats -->
       <div class="row">
-        <div class="col-lg-4 col-md-6 col-12">
-          <div class="small-box bg-info shadow-sm">
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-maroon">
             <div class="inner">
-              <h3>{{ pwd_count or '0' }}</h3>
-              <p>Total PWD Records</p>
+              <h3>{{ diocese_count|default('0', true) }}</h3>
+              <p>Dioceses</p>
             </div>
-            <div class="icon"><i class="fas fa-wheelchair"></i></div>
-            <a href="/manage_pwds" class="small-box-footer">View Registry <i class="fas fa-arrow-circle-right"></i></a>
-          </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6 col-12">
-          <div class="small-box bg-success shadow-sm">
-            <div class="inner">
-              <h3>{{ coordinator_count or '0' }}</h3>
-              <p>Coordinators</p>
-            </div>
-            <div class="icon"><i class="fas fa-user-tie"></i></div>
-            <a href="/manage_coordinators" class="small-box-footer">View Team <i class="fas fa-arrow-circle-right"></i></a>
+            <div class="icon"><i class="fas fa-map-marked-alt"></i></div>
+            <a href="/manage_dioceses" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
           </div>
         </div>
 
-        <div class="col-lg-4 col-md-12 col-12">
-          <div class="small-box bg-warning shadow-sm">
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-indigo">
             <div class="inner">
-              <h3>{{ parish_count or '0' }}</h3>
-              <p>Active Parishes</p>
+              <h3>{{ archdeaconry_count|default('0', true) }}</h3>
+              <p>Archdeaconries</p>
+            </div>
+            <div class="icon"><i class="fas fa-layer-group"></i></div>
+            <a href="/manage_archdeaconries" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-purple">
+            <div class="inner">
+              <h3>{{ parish_count|default('0', true) }}</h3>
+              <p>Parishes</p>
+            </div>
+            <div class="icon"><i class="fas fa-place-of-worship"></i></div>
+            <a href="/manage_parishes" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-teal">
+            <div class="inner">
+              <h3>{{ church_count|default('0', true) }}</h3>
+              <p>Total Churches</p>
             </div>
             <div class="icon"><i class="fas fa-church"></i></div>
-            <a href="/manage_dioceses" class="small-box-footer">View Hierarchy <i class="fas fa-arrow-circle-right"></i></a>
+            <a href="/manage_churches" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
           </div>
         </div>
       </div>
 
-      <h5 class="mt-4 mb-3 text-secondary font-weight-bold">
-        <i class="fas fa-tasks mr-2 text-primary"></i> Registry Management
-      </h5>
-      
+      <!-- People & activity stats -->
       <div class="row">
-        <div class="col-md-6 col-12">
-          <div class="info-box shadow-sm mb-3">
-            <span class="info-box-icon bg-primary elevation-1"><i class="fas fa-user-plus"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">Beneficiary Management</span>
-              <a href="/manage_pwds" class="info-box-number text-primary">Manage PWDs <i class="fas fa-chevron-right ml-1 small"></i></a>
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-olive">
+            <div class="inner">
+              <h3>{{ clergy_count|default('0', true) }}</h3>
+              <p>Active Clergy</p>
             </div>
+            <div class="icon"><i class="fas fa-user-tie"></i></div>
+            <a href="/manage_clergy" class="small-box-footer">Registry <i class="fas fa-arrow-circle-right"></i></a>
           </div>
         </div>
 
-        <div class="col-md-6 col-12">
-          <div class="info-box shadow-sm mb-3">
-            <span class="info-box-icon bg-secondary elevation-1"><i class="fas fa-user-shield"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">System Administration</span>
-              <a href="/manage_users" class="info-box-number text-dark">Manage User Permissions <i class="fas fa-chevron-right ml-1 small"></i></a>
+        <div class="col-lg-6 col-12">
+          <div class="small-box bg-info">
+            <div class="inner">
+              <h3>{{ pwd_count|default('0', true) }}</h3>
+              <p>Global PWD Registry</p>
             </div>
+            <div class="icon"><i class="fas fa-wheelchair"></i></div>
+            <a href="/manage_pwds" class="small-box-footer">Full Dataset <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Administrators box -->
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-dark">
+            <div class="inner">
+              <h3>{{coordinator_count|default('0', true)}}</h3>
+              <p>Pwd Co odinators</p>
+            </div>
+            <div class="icon"><i class="fas fa-user-shield"></i></div>
+            <a href="/manage_coordinators" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
           </div>
         </div>
       </div>
+
+   
 
     </div>
   </section>
+
+  {% else %}
+
+  <!-- Access denied section -->
+  <section class="content pt-5">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-8 offset-md-2">
+          <div class="card card-danger">
+            <div class="card-body text-center">
+              <h2 class="headline text-danger">403</h2>
+              <h3><i class="fas fa-exclamation-triangle"></i> Access Forbidden</h3>
+              <p>Your account does not have Super Admin permissions. This attempt has been logged.</p>
+              <p class="text-muted small"><i class="fas fa-clock"></i> {{ now.strftime('%Y-%m-%d %H:%M:%S') if now else '' }}</p>
+              <a href="/index" class="btn btn-primary"><i class="fas fa-home"></i> Return Home</a>
+              <button onclick="history.back()" class="btn btn-default ml-2"><i class="fas fa-arrow-left"></i> Go Back</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% endif %}
+
 </div>
-{% endblock content %}
+{% endblock %}
 
 {% block javascripts %}
   {{ super() }}
   <script>
     $(document).ready(function() {
-      // Auto-hide alerts after 4s
+      // Auto-dismiss alerts after 5 seconds
       setTimeout(function() {
-        $('#flashMessageContainer').fadeOut('slow');
-      }, 4000);
+        $('.alert').alert('close');
+      }, 5000);
+
+      // Initialize tooltips
+      $('[data-toggle="tooltip"]').tooltip();
     });
   </script>
-{% endblock javascripts %}
+{% endblock %}

@@ -1,40 +1,103 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Ministry Dashboard {% endblock %}
+{% block title %} Dashboard {% endblock %}
 
 {% block body_class %} sidebar-mini {% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
   <style>
-    .alert-container {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      width: 70%;
-    }
-    .bg-church-gradient {
-      background: linear-gradient(45deg, #4e085e, #8e24aa); /* Anglican Purple Theme */
-      color: white;
-    }
+    .bg-super-gradient { background: linear-gradient(45deg, #1e1e2f, #4e085e); color: white; }
+    .bg-church-purple { background: #4e085e; color: white; }
+    .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
   </style>
 {% endblock stylesheets %}
 
 {% block content %}
 <div class="content-wrapper">
+
+  {% if session.get('role') == 'super_admin' %}
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6"><h1 class="m-0 text-bold text-dark"><i class="fas fa-shield-alt mr-2 text-danger"></i>System Control Center</h1></div>
+        <div class="col-sm-6 text-right"><span class="badge badge-dark p-2"><span class="status-dot bg-success"></span> GLOBAL ACCESS</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="content">
+    <div class="container-fluid">
+      <div class="callout callout-danger bg-super-gradient border-0 shadow-lg mb-4">
+        <h5>Welcome, Master Administrator {{ session.get('first_name', 'Admin') }}!</h5>
+        <p class="mb-0">Node: <b>Central</b> | Privilege: <span class="badge badge-warning">Root</span></p>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-maroon shadow-sm">
+            <div class="inner"><h3>{{ diocese_count or '0' }}</h3><p>Dioceses</p></div>
+            <div class="icon"><i class="fas fa-map-marked-alt"></i></div>
+            <a href="/manage_dioceses" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-indigo shadow-sm">
+            <div class="inner"><h3>{{ archdeaconry_count or '0' }}</h3><p>Archdeaconries</p></div>
+            <div class="icon"><i class="fas fa-layer-group"></i></div>
+            <a href="/manage_archdeaconries" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-purple shadow-sm">
+            <div class="inner"><h3>{{ parish_count or '0' }}</h3><p>Parishes</p></div>
+            <div class="icon"><i class="fas fa-place-of-worship"></i></div>
+            <a href="/manage_parishes" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-teal shadow-sm">
+            <div class="inner"><h3>{{ church_count or '0' }}</h3><p>Churches</p></div>
+            <div class="icon"><i class="fas fa-church"></i></div>
+            <a href="/manage_churches" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-olive shadow-sm">
+            <div class="inner"><h3>{{ clergy_count or '0' }}</h3><p>Active Clergy</p></div>
+            <div class="icon"><i class="fas fa-user-tie"></i></div>
+            <a href="/manage_clergy" class="small-box-footer">Registry <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-6 col-12">
+          <div class="small-box bg-info shadow-sm">
+            <div class="inner"><h3>{{ pwd_count or '0' }}</h3><p>Global PWD Registry</p></div>
+            <div class="icon"><i class="fas fa-wheelchair"></i></div>
+            <a href="/manage_pwds" class="small-box-footer">Full Dataset <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-dark shadow-sm">
+            <div class="inner"><h3>Audit</h3><p>System Logs</p></div>
+            <div class="icon"><i class="fas fa-fingerprint"></i></div>
+            <a href="/user_activity" class="small-box-footer">Security Audit <i class="fas fa-arrow-circle-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% else %}
   <div class="content-header">
     <div class="container-fluid">
       <div class="row mb-2">
         <div class="col-sm-6">
-          <h1 class="m-0">Ministry Dashboard</h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="/index">Home</a></li>
-            <li class="breadcrumb-item active">Dashboard</li>
-          </ol>
+          <h1 class="m-0 text-bold text-dark">Welcome, {{ session.get('first_name', 'Servant') }}</h1>
+          <p class="text-muted text-sm">Role: {{ session.get('role', 'User').replace('_', ' ').title() }}</p>
         </div>
       </div>
     </div>
@@ -42,111 +105,52 @@
 
   <section class="content">
     <div class="container-fluid">
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="alert-container" id="flashMessageContainer">
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible shadow-lg">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                <h5><i class="icon fas fa-info-circle"></i> Notification</h5>
-                {{ message }}
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
-      <div class="callout callout-info bg-church-gradient border-0 shadow-sm">
-        <h5><i class="fas fa-cross mr-2"></i> Welcome, {{ session.get('first_name', 'Servant') }}!</h5>
-        <p>Diocese/Parish: <b>{{ session.get('assigned_db', 'General').replace('_', ' ').title() }}</b> | 
-           Role: <b>{{ session.get('role', 'User').replace('_', ' ').title() }}</b></p>
-      </div>
-
-      <div class="row">
-        <div class="col-lg-3 col-6">
-          <div class="small-box bg-info shadow-sm">
-            <div class="inner">
-              <h3>{{ pwd_count or '0' }}</h3>
-              <p>Total PWD Records</p>
-            </div>
-            <div class="icon"><i class="fas fa-wheelchair"></i></div>
-            <a href="/manage_pwds" class="small-box-footer">View Registry <i class="fas fa-arrow-circle-right"></i></a>
-          </div>
-        </div>
-        <div class="col-lg-3 col-6">
-          <div class="small-box bg-success shadow-sm">
-            <div class="inner">
-              <h3>{{ coordinator_count or '0' }}</h3>
-              <p>Coordinators</p>
-            </div>
-            <div class="icon"><i class="fas fa-user-tie"></i></div>
-            <a href="/manage_coordinators" class="small-box-footer">View Team <i class="fas fa-arrow-circle-right"></i></a>
-          </div>
-        </div>
-        <div class="col-lg-3 col-6">
-          <div class="small-box bg-warning shadow-sm">
-            <div class="inner">
-              <h3>{{ parish_count or '0' }}</h3>
-              <p>Active Parishes</p>
-            </div>
-            <div class="icon"><i class="fas fa-church"></i></div>
-            <a href="/manage_dioceses" class="small-box-footer">View Hierarchy <i class="fas fa-arrow-circle-right"></i></a>
-          </div>
-        </div>
-        <div class="col-lg-3 col-6">
-          <div class="small-box bg-danger shadow-sm">
-            <div class="inner">
-              <h3>{{ support_value or '0' }}</h3>
-              <p>Support (UGX M)</p>
-            </div>
-            <div class="icon"><i class="fas fa-hand-holding-heart"></i></div>
-            <a href="/financial_reports" class="small-box-footer">Financials <i class="fas fa-arrow-circle-right"></i></a>
-          </div>
-        </div>
-      </div>
-
-      <h5 class="mt-4 mb-2"><i class="fas fa-bolt mr-2 text-warning"></i> Ministry Quick Actions</h5>
       
+      <div class="callout callout-info border-0 shadow-sm mb-4">
+        {% if session.get('role') in ['teacher', 'class_teacher'] %}
+          <h5><i class="fas fa-chalkboard-teacher mr-2"></i> Educator's Portal</h5>
+          <p>Access your class schedules, student attendance, and lesson materials below.</p>
+        {% elif 'inventory' in session.get('role') or 'manager' in session.get('role') %}
+          <h5><i class="fas fa-boxes mr-2"></i> Inventory & Supply Management</h5>
+          <p>Monitor stock levels, approve requisitions, and update asset registries.</p>
+        {% else %}
+          <h5><i class="fas fa-user-circle mr-2"></i> Member Dashboard</h5>
+          <p>Welcome to the ministry portal. Select a module below to begin.</p>
+        {% endif %}
+      </div>
+
       <div class="row">
         <div class="col-md-4 col-sm-6 col-12">
           <div class="info-box shadow-sm">
-            <span class="info-box-icon bg-primary"><i class="fas fa-user-plus"></i></span>
+            <span class="info-box-icon bg-primary"><i class="fas fa-address-book"></i></span>
             <div class="info-box-content">
-              <span class="info-box-text">New Registration</span>
-              <a href="/add_pwd" class="font-weight-bold">Add PWD Record <i class="fas fa-arrow-right ml-1"></i></a>
+              <span class="info-box-text">Directory</span>
+              <a href="/manage_pwds" class="font-weight-bold">View Registry</a>
             </div>
           </div>
         </div>
 
         <div class="col-md-4 col-sm-6 col-12">
           <div class="info-box shadow-sm">
-            <span class="info-box-icon bg-success"><i class="fas fa-check-double"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">Attendance</span>
-              <a href="/attendance" class="font-weight-bold">Mark Attendance <i class="fas fa-arrow-right ml-1"></i></a>
-            </div>
+            {% if session.get('role') == 'teacher' %}
+              <span class="info-box-icon bg-success"><i class="fas fa-graduation-cap"></i></span>
+              <div class="info-box-content"><span class="info-box-text">My Classes</span><a href="/my_classes" class="font-weight-bold">Open Portal</a></div>
+            {% elif 'inventory' in session.get('role') %}
+              <span class="info-box-icon bg-warning"><i class="fas fa-warehouse"></i></span>
+              <div class="info-box-content"><span class="info-box-text">Stock Levels</span><a href="/inventory" class="font-weight-bold">Check Items</a></div>
+            {% else %}
+              <span class="info-box-icon bg-info"><i class="fas fa-calendar-alt"></i></span>
+              <div class="info-box-content"><span class="info-box-text">Calendar</span><a href="/events" class="font-weight-bold">View Events</a></div>
+            {% endif %}
           </div>
         </div>
 
         <div class="col-md-4 col-sm-6 col-12">
           <div class="info-box shadow-sm">
-            <span class="info-box-icon bg-purple" style="background-color: #6f42c1 !important; color: white;">
-              <i class="fas fa-donate"></i>
-            </span>
+            <span class="info-box-icon bg-secondary"><i class="fas fa-user-cog"></i></span>
             <div class="info-box-content">
-              <span class="info-box-text">Support Tracking</span>
-              <a href="/support_management" class="font-weight-bold">Record Aid Provided <i class="fas fa-arrow-right ml-1"></i></a>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4 col-sm-6 col-12">
-          <div class="info-box shadow-sm">
-            <span class="info-box-icon bg-warning"><i class="fas fa-user-shield"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">Access Control</span>
-              <a href="/manage_users" class="font-weight-bold">Manage Permissions <i class="fas fa-arrow-right ml-1"></i></a>
+              <span class="info-box-text">My Account</span>
+              <a href="/profile" class="font-weight-bold">Settings</a>
             </div>
           </div>
         </div>
@@ -154,17 +158,7 @@
 
     </div>
   </section>
+  {% endif %}
+
 </div>
 {% endblock content %}
-
-{% block javascripts %}
-  {{ super() }}
-  <script>
-    $(document).ready(function() {
-      // Auto-hide alerts after 4s
-      setTimeout(function() {
-        $('#flashMessageContainer').fadeOut('slow');
-      }, 4000);
-    });
-  </script>
-{% endblock javascripts %}

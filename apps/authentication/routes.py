@@ -378,51 +378,64 @@ def signup():
 
 
 
+
 @login_required
 @blueprint.route('/manage_users')
 def manage_users():
-    role = session.get('role')
+    current_user_role = session.get('role')
 
+    # RBAC Hierarchy: Updated so NO ONE sees 'super_admin' in the list
     excluded_roles_map = {
+        'super_admin': ['super_admin'], 
         'admin': ['admin', 'super_admin'],
-        'inventory_manager': ['admin', 'inventory_manager', 'super_admin', 'class_teacher'],
-        'super_admin': ['super_admin']
+        'inventory_manager': ['admin', 'inventory_manager', 'super_admin', 'class_teacher']
     }
 
-    if role not in excluded_roles_map:
-        flash('You do not have permission to access this page.', 'warning')
-        return redirect(url_for('authentication_blueprint.login'))
+    if current_user_role not in excluded_roles_map:
+        flash('Access Denied: Insufficient Permissions.', 'warning')
+        return redirect(url_for('home_blueprint.index'))
 
-    excluded_roles = excluded_roles_map[role]
+    excluded_roles = excluded_roles_map[current_user_role]
 
     try:
         with get_db_connection() as connection:
             with connection.cursor(dictionary=True) as cursor:
+                
+                # We always exclude super_admin, and potentially others based on the map
                 placeholders = ','.join(['%s'] * len(excluded_roles))
+                where_clause = f"u.role NOT IN ({placeholders})"
+                params = tuple(excluded_roles)
+
                 query = f"""
-                    SELECT
-                        id,
-                        username,
-                        role,
-                        name_sf,
-                        is_online,
-                        CONCAT_WS(' ', last_name, first_name, other_name) AS full_name,
-                        profile_image,
-                        sign_image
-                    FROM users
-                    WHERE role NOT IN ({placeholders})
-                    ORDER BY username ASC
+                    SELECT 
+                        u.id, 
+                        u.username, 
+                        u.role, 
+                        u.name_sf, 
+                        u.is_online, 
+                        u.profile_image, 
+                        u.sign_image,
+                        CONCAT_WS(' ', u.last_name, u.first_name, u.other_name) AS full_name,
+                        (SELECT MAX(login_time) 
+                         FROM user_activity 
+                         WHERE user_id = u.id) AS last_activity
+                    FROM users u
+                    WHERE {where_clause}
+                    ORDER BY last_activity DESC, u.username ASC
                 """
-                cursor.execute(query, tuple(excluded_roles))
+                
+                cursor.execute(query, params)
                 users = cursor.fetchall()
 
-    except Exception:
-        flash("Error fetching user data.", "danger")
+    except Exception as e:
+        print(f"CRITICAL: Manage Users Database Error -> {e}")
+        flash("System error while retrieving user directory.", "danger")
         return redirect(url_for('home_blueprint.index'))
 
     return render_template('accounts/manage_users.html', users=users, num=len(users))
 
 
+    
 
 
 
@@ -434,19 +447,40 @@ def manage_users():
 
 
 
-@login_required
-# Flask route (suggested)
+
+
+from flask import jsonify
+from datetime import datetime
+
 @blueprint.route('/get_all_user_statuses', methods=['GET'])
+@login_required
 def get_all_user_statuses():
     try:
         with get_db_connection() as connection:
             with connection.cursor(dictionary=True) as cursor:
-                cursor.execute("SELECT id, is_online FROM users")
-                statuses = cursor.fetchall()
-                return jsonify(statuses)
+                # Get status and the most recent log entry for everyone
+                query = """
+                    SELECT 
+                        u.id, 
+                        u.is_online,
+                        (SELECT MAX(timestamp) FROM activity_logs WHERE user_id = u.id) as last_seen
+                    FROM users u
+                """
+                cursor.execute(query)
+                results = cursor.fetchall()
+                
+                # Format timestamps for the frontend
+                for row in results:
+                    if row['last_seen']:
+                        # Example format: "2026-03-08 12:45"
+                        row['last_seen'] = row['last_seen'].strftime('%Y-%m-%d %H:%M')
+                    else:
+                        row['last_seen'] = "Never"
+                
+                return jsonify(results)
     except Exception as e:
+        print(f"Error in bulk status check: {e}")
         return jsonify([]), 500
-
 
 
 
@@ -611,6 +645,16 @@ def edit_user(id):
                     
                     connection.commit()
                     flash("User updated successfully!", "success")
+                    # ... after connection.commit() ...
+
+                    # NEW: Update session immediately if the edited user is the current user
+                    if session.get('id') == id:
+                        session['first_name'] = first_name
+                        session['last_name'] = last_name
+                        session['role'] = role
+                        session['profile_image'] = profile_image_path  # This ensures the sidebar image updates
+
+                    return redirect(url_for("authentication_blueprint.manage_users"))
                     return redirect(url_for("authentication_blueprint.manage_users"))
 
                 except Exception as e:
@@ -958,55 +1002,85 @@ def handle_image_upload(image_file):
 
 
 
-@login_required
 @blueprint.route('/edit_user_profile/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_user_profile(id):
-    with get_db_connection() as connection:
-        with connection.cursor(dictionary=True) as cursor:
-            
-            # POST request - Handle profile update
-            if request.method == 'POST':
-                # Collect form data
-                username = request.form['username']
-                first_name = request.form['first_name']
-                last_name = request.form['last_name']
-                other_name = request.form['other_name']
-                password = request.form['password']
-                profile_image = request.files.get('profile_image')
-
-                # Use existing password if none is provided
-                password = password if password else get_user_password(cursor, id)
+    try:
+        with get_db_connection() as connection:
+            with connection.cursor(dictionary=True) as cursor:
                 
-                # Process profile image
-                profile_image_path = handle_profile_image(cursor, profile_image, id)
+                if request.method == 'POST':
+                    # 1. Collect form data (Limited to profile/security fields only)
+                    username = request.form.get('username')
+                    first_name = request.form.get('first_name')
+                    last_name = request.form.get('last_name')
+                    other_name = request.form.get('other_name') # Included from your schema
+                    password = request.form.get('password')
+                    
+                    # 2. Get existing media/credentials to preserve if not changed
+                    cursor.execute("SELECT password, profile_image, sign_image FROM users WHERE id = %s", (id,))
+                    current_user = cursor.fetchone()
 
-                try:
-                    # Update user details in the database
-                    cursor.execute(''' 
+                    if not current_user:
+                        flash('User not found.', 'danger')
+                        return redirect(url_for('home_blueprint.index'))
+
+                    # 3. Handle Password (Update only if user provided a new one)
+                    final_password = password if password.strip() else current_user['password']
+
+                    # 4. Handle Media (Profile & Signature)
+                    profile_file = request.files.get('profile_image')
+                    sign_file = request.files.get('sign_image')
+
+                    # Capture crop data for the profile image
+                    crop_data = {
+                        'x': request.form.get('crop_x'), 'y': request.form.get('crop_y'),
+                        'w': request.form.get('crop_w'), 'h': request.form.get('crop_h')
+                    }
+
+                    # Use helper functions to save files; fallback to current DB value if no new file
+                    profile_path = handle_profile_image(cursor, profile_file, id, crop_data) if profile_file else current_user['profile_image']
+                    sign_path = handle_sign_image(cursor, sign_file, id) if sign_file else current_user['sign_image']
+
+                    # 5. Execute Update (STRICT: role and role1 are not mentioned, so they won't change)
+                    update_sql = """
                         UPDATE users 
-                        SET username = %s, first_name = %s, last_name = %s, other_name = %s, password = %s, profile_image = %s
+                        SET username = %s, first_name = %s, last_name = %s, 
+                            other_name = %s, password = %s, profile_image = %s, 
+                            sign_image = %s
                         WHERE id = %s
-                    ''', (username, first_name, last_name, other_name, password, profile_image_path, id))
+                    """
+                    cursor.execute(update_sql, (
+                        username, first_name, last_name, other_name,
+                        final_password, profile_path, sign_path, id
+                    ))
+                    
                     connection.commit()
-                    flash('User updated successfully!', 'success')
-                except mysql.connector.Error as err:
-                    flash(f'Error: {err}', 'danger')
 
-                # Redirect after successful update
-                return redirect(url_for('home_blueprint.index'))
+                    # 6. Session Synchronization (UI updates only)
+                    if session.get('id') == id:
+                        session['username'] = username
+                        session['first_name'] = first_name
+                        session['last_name'] = last_name
+                        session['profile_image'] = profile_path
 
-            # GET request - Fetch user data to populate the edit form
-            cursor.execute('SELECT * FROM users WHERE id = %s', (id,))
-            user = cursor.fetchone()
+                    flash('Profile updated successfully!', 'success')
+                    return redirect(url_for('home_blueprint.index'))
 
-            # If user not found, show error and redirect
-            if not user:
-                flash('User not found!', 'danger')
-                return redirect(url_for('home_blueprint.index'))
+                # GET request: Fetch user data for the form
+                cursor.execute('SELECT * FROM users WHERE id = %s', (id,))
+                user = cursor.fetchone()
 
-    return render_template('accounts/edit_user_profile.html', user=user)
+                if not user:
+                    flash('User not found!', 'danger')
+                    return redirect(url_for('home_blueprint.index'))
 
+                return render_template('accounts/edit_user_profile.html', user=user)
 
+    except Exception as e:
+        print(f"Error updating profile ID {id}: {e}")
+        flash("An unexpected error occurred. Please try again.", "danger")
+        return redirect(url_for('home_blueprint.index'))
 
 
 
