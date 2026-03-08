@@ -1,44 +1,30 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}Edit Profile{% endblock %}
-
+{% block title %} Edit User {% endblock %}
 {% block body_class %}sidebar-mini layout-fixed{% endblock %}
 
 {% block stylesheets %}
 <link rel="stylesheet" href="{{ url_for('static', filename='assets/plugins/select2/css/select2.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 
 <style>
   .profile-user-img-edit {
-    width: 120px;
-    height: 120px;
-    object-fit: cover;
-    border: 3px solid #adb5bd;
-    cursor: pointer; /* Indicates it's clickable */
-    transition: transform 0.2s;
+    width: 120px; height: 120px; object-fit: cover;
+    border: 3px solid #adb5bd; cursor: pointer; transition: transform 0.2s;
   }
-  .profile-user-img-edit:hover {
-    transform: scale(1.05);
-    filter: brightness(90%);
+  .sign-img-edit {
+    width: 180px; height: auto; border: 2px solid #dee2e6;
+    cursor: pointer; transition: transform 0.2s; background: #fff;
   }
+  .profile-user-img-edit:hover, .sign-img-edit:hover { transform: scale(1.05); filter: brightness(90%); }
+  
   .form-section-header {
-    font-weight: 700;
-    border-bottom: 2px solid #007bff;
-    margin-bottom: 20px;
-    padding-bottom: 5px;
-    display: inline-block;
+    font-weight: 700; border-bottom: 2px solid #007bff;
+    margin-bottom: 20px; padding-bottom: 5px; display: inline-block; text-transform: uppercase; font-size: 0.9rem;
   }
-  /* Cropping Area Style */
-  .img-container img {
-    max-width: 100%;
-  }
-  .preview-wrapper {
-    overflow: hidden;
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    border: 1px solid #ccc;
-  }
+  .img-container img { max-width: 100%; }
+  .preview-wrapper { overflow: hidden; border: 1px solid #ccc; background: #fff; margin: 0 auto; }
 </style>
 {% endblock %}
 
@@ -47,12 +33,8 @@
   <section class="content-header">
     <div class="container-fluid">
       <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1>My Profile</h1>
-        </div>
-        <div class="col-sm-6 text-right">
-          <span class="badge badge-info">Account ID #{{ user.id }}</span>
-        </div>
+        <div class="col-sm-6"><h1><i class="fas fa-user-cog mr-2"></i>Edit User Account</h1></div>
+        <div class="col-sm-6 text-right"><span class="badge badge-info">User ID #{{ user.id }}</span></div>
       </div>
     </div>
   </section>
@@ -60,120 +42,137 @@
   <section class="content">
     <div class="container-fluid">
       <div class="row">
+        
         <div class="col-md-3">
           <div class="card card-primary card-outline">
-            <div class="card-body text-center">
-              <img class="profile-user-img img-fluid img-circle profile-user-img-edit" 
-                   id="current-profile-preview"
-                   title="Click to view full size"
+            <div class="card-body box-profile text-center">
+              <img class="profile-user-img img-fluid img-circle profile-user-img-edit viewer-trigger" 
+                   id="current-profile-preview" title="Click to view full size"
                    src="{{ url_for('static', filename='uploads/' + user.profile_image) if user.profile_image else url_for('static', filename='assets/img/default-avatar.png') }}">
-              <h3 class="mt-3">{{ user.first_name }} {{ user.last_name }}</h3>
-              <p class="text-muted">{{ user.role }}</p>
+              <h3 class="profile-username text-center mt-2">{{ user.first_name }} {{ user.last_name }}</h3>
+              <p class="text-muted text-center">{{ user.role }}</p>
+            </div>
+          </div>
+
+          <div class="card card-secondary card-outline">
+            <div class="card-header"><h3 class="card-title">Official Signature</h3></div>
+            <div class="card-body text-center">
+              <img class="img-fluid sign-img-edit viewer-trigger" id="current-sign-preview"
+                   src="{{ url_for('static', filename='uploads/' + user.sign_image) if user.sign_image else url_for('static', filename='assets/img/no-sign.png') }}">
             </div>
           </div>
         </div>
 
         <div class="col-md-9">
           <div class="card">
-            <form id="profileForm" method="POST" action="{{ url_for('authentication_blueprint.edit_user_profile', id=user.id) }}" enctype="multipart/form-data">
+            <form action="{{ url_for('authentication_blueprint.edit_user', id=user.id) }}" method="POST" enctype="multipart/form-data">
               <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
               
-              <input type="hidden" name="crop_x" id="crop_x">
-              <input type="hidden" name="crop_y" id="crop_y">
-              <input type="hidden" name="crop_w" id="crop_w">
-              <input type="hidden" name="crop_h" id="crop_h">
+              <input type="hidden" name="crop_x" id="crop_x"> <input type="hidden" name="crop_y" id="crop_y">
+              <input type="hidden" name="crop_w" id="crop_w"> <input type="hidden" name="crop_h" id="crop_h">
+              <input type="hidden" name="sign_x" id="sign_x"> <input type="hidden" name="sign_y" id="sign_y">
+              <input type="hidden" name="sign_w" id="sign_w"> <input type="hidden" name="sign_h" id="sign_h">
 
               <div class="card-body">
-                <h5 class="form-section-header">Basic Information</h5>
+                <h5 class="form-section-header">Personal Information</h5>
                 <div class="row">
-                  <div class="col-md-6 form-group">
+                  <div class="col-md-4 form-group">
                     <label>Username</label>
                     <input class="form-control" name="username" value="{{ user.username }}" required>
                   </div>
-                  <div class="col-md-6 form-group">
-                    <label>Other Name</label>
-                    <input class="form-control" name="other_name" value="{{ user.other_name }}">
-                  </div>
-                  <div class="col-md-6 form-group">
+                  <div class="col-md-4 form-group">
                     <label>First Name</label>
                     <input class="form-control" name="first_name" value="{{ user.first_name }}" required>
                   </div>
-                  <div class="col-md-6 form-group">
+                  <div class="col-md-4 form-group">
                     <label>Last Name</label>
                     <input class="form-control" name="last_name" value="{{ user.last_name }}" required>
                   </div>
                 </div>
 
-                <h5 class="form-section-header mt-4">Security</h5>
-                <div class="form-group">
-                  <input type="password" class="form-control" id="password" name="password" placeholder="Leave blank to keep password">
+                <h5 class="form-section-header mt-3">Access Permissions</h5>
+                <div class="row">
+                  <div class="col-md-6 form-group">
+                    <label>Primary Role</label>
+                    <select class="form-control select2bs4" name="role" required>
+                      <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Administrator</option>
+                      <option value="director" {% if user.role == 'director' %}selected{% endif %}>Director</option>
+                      <option value="Head_ICT" {% if user.role == 'Head_ICT' %}selected{% endif %}>Head of ICT</option>
+                      <option value="other" {% if user.role == 'other' %}selected{% endif %}>Staff / Other</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6 form-group">
+                    <label>Secondary Role</label>
+                    <select class="form-control select2bs4" name="role1">
+                      <option value="None" {% if not user.role1 or user.role1 == 'None' %}selected{% endif %}>None</option>
+                      <option value="teacher" {% if user.role1 == 'teacher' %}selected{% endif %}>Teacher/Field</option>
+                    </select>
+                  </div>
                 </div>
 
-                <h5 class="form-section-header mt-4">Profile Image</h5>
-                <div class="form-group">
-                  <div class="custom-file">
-                    <input type="file" class="custom-file-input" id="imageInput" name="profile_image" accept="image/*">
-                    <label class="custom-file-label" for="imageInput">Choose new photo...</label>
+                <h5 class="form-section-header mt-3">Update Media (Optional)</h5>
+                <div class="row">
+                  <div class="col-md-6 form-group">
+                    <label>Change Profile Image</label>
+                    <div class="custom-file">
+                      <input type="file" class="custom-file-input crop-trigger" name="profile_image" accept="image/*" data-aspect="1" data-prefix="crop" data-preview="preview-profile">
+                      <label class="custom-file-label">Choose file...</label>
+                    </div>
                   </div>
-                  <small class="text-muted">A cropping tool will appear after you select a file.</small>
+                  <div class="col-md-6 form-group">
+                    <label>Change Signature</label>
+                    <div class="custom-file">
+                      <input type="file" class="custom-file-input crop-trigger" name="sign_image" accept="image/*" data-aspect="3.125" data-prefix="sign" data-preview="preview-sign">
+                      <label class="custom-file-label">Choose file...</label>
+                    </div>
+                  </div>
+                </div>
+
+                <h5 class="form-section-header mt-3">Security</h5>
+                <div class="row">
+                    <div class="col-md-12 form-group">
+                        <label>New Password</label>
+                        <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current password">
+                    </div>
                 </div>
               </div>
 
-              <div class="card-footer">
-                <button type="submit" class="btn btn-primary">
-                  <i class="fas fa-save"></i> Update Profile
-                </button>
+              <div class="card-footer bg-light">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save Changes</button>
+                <a href="/manage_users" class="btn btn-default float-right">Cancel</a>
               </div>
             </form>
           </div>
         </div>
+
       </div>
     </div>
   </section>
 </div>
 
-<div class="modal fade" id="cropperModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
+<div class="modal fade" id="cropperModal" data-backdrop="static" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Crop your profile picture</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
+      <div class="modal-header bg-primary text-white"><h5 class="modal-title">Crop Image</h5></div>
       <div class="modal-body">
         <div class="row">
-          <div class="col-md-8">
-            <div class="img-container">
-              <img id="imageToCrop" src="">
-            </div>
-          </div>
+          <div class="col-md-8 border-right"><div class="img-container"><img id="imageToCrop" src=""></div></div>
           <div class="col-md-4 text-center">
             <h6>Preview</h6>
-            <div class="preview-wrapper mx-auto">
-                <div class="img-preview" style="width: 150px; height: 150px; overflow: hidden;"></div>
-            </div>
+            <div id="cropPreview" class="preview-wrapper mx-auto"></div>
+            <button type="button" class="btn btn-success btn-block mt-4" id="btnApplyCrop">Apply Crop</button>
           </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="saveCrop">Apply Crop</button>
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="viewerModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="viewerModal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-dialog-centered modal-md">
     <div class="modal-content bg-transparent border-0">
       <div class="modal-body text-center p-0">
-        <img id="full-size-view" src="" class="img-fluid rounded shadow-lg" style="max-height: 80vh;">
-        <div class="mt-3">
-          <button type="button" class="btn btn-light btn-circle" data-dismiss="modal">
-            <i class="fas fa-times"></i> Close
-          </button>
-        </div>
+        <img id="full-size-view" src="" class="img-fluid rounded shadow-lg">
       </div>
     </div>
   </div>
@@ -181,73 +180,71 @@
 {% endblock %}
 
 {% block javascripts %}
+<script src="{{ url_for('static', filename='assets/plugins/select2/js/select2.full.min.js') }}"></script>
 <script src="{{ url_for('static', filename='assets/plugins/bs-custom-file-input/bs-custom-file-input.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
-  $(function () {
-    bsCustomFileInput.init();
+$(function () {
+  bsCustomFileInput.init();
+  $('.select2bs4').select2({ theme: 'bootstrap4' });
 
-    let cropper;
-    const imageInput = document.getElementById('imageInput');
-    const imageToCrop = document.getElementById('imageToCrop');
-    const $modal = $('#cropperModal');
-    const $viewerModal = $('#viewerModal');
+  let cropper;
+  let activePrefix;
 
-    // Lightbox Logic: Open viewer when clicking the profile image
-    $('#current-profile-preview').on('click', function() {
-      const currentSrc = $(this).attr('src');
-      $('#full-size-view').attr('src', currentSrc);
-      $viewerModal.modal('show');
-    });
-
-    // Handle file selection
-    imageInput.addEventListener('change', function (e) {
-      const files = e.target.files;
-      const done = function (url) {
-        imageToCrop.src = url;
-        $modal.modal('show');
-      };
-
-      if (files && files.length > 0) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          done(reader.result);
-        };
-        reader.readAsDataURL(files[0]);
-      }
-    });
-
-    // Initialize Cropper when modal opens
-    $modal.on('shown.bs.modal', function () {
-      cropper = new Cropper(imageToCrop, {
-        aspectRatio: 1,
-        viewMode: 1,
-        preview: '.img-preview'
-      });
-    }).on('hidden.bs.modal', function () {
-      if (cropper) {
-        cropper.destroy();
-        cropper = null;
-      }
-    });
-
-    // Save crop coordinates on "Apply Crop"
-    document.getElementById('saveCrop').addEventListener('click', function () {
-      const data = cropper.getData();
-      
-      // Set hidden inputs
-      document.getElementById('crop_x').value = Math.round(data.x);
-      document.getElementById('crop_y').value = Math.round(data.y);
-      document.getElementById('crop_w').value = Math.round(data.width);
-      document.getElementById('crop_h').value = Math.round(data.height);
-
-      // Show cropped preview in the main profile page immediately
-      const croppedCanvas = cropper.getCroppedCanvas({ width: 160, height: 160 });
-      document.getElementById('current-profile-preview').src = croppedCanvas.toDataURL();
-
-      $modal.modal('hide');
-    });
+  // 1. Viewer Logic
+  $('.viewer-trigger').on('click', function() {
+    $('#full-size-view').attr('src', $(this).attr('src'));
+    $('#viewerModal').modal('show');
   });
+
+  // 2. Cropper Logic
+  $('.crop-trigger').on('change', function(e) {
+    const file = e.target.files[0];
+    activePrefix = $(this).data('prefix');
+    const aspect = $(this).data('aspect');
+    const previewSize = activePrefix === 'crop' ? '150px' : '250px x 80px';
+    
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        $('#imageToCrop').attr('src', event.target.result);
+        // Adjust preview box shape
+        if(activePrefix === 'crop') {
+            $('#cropPreview').css({'width': '150px', 'height': '150px', 'border-radius': '50%'});
+        } else {
+            $('#cropPreview').css({'width': '250px', 'height': '80px', 'border-radius': '0'});
+        }
+        $('#cropperModal').data('aspect', aspect).modal('show');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  $('#cropperModal').on('shown.bs.modal', function() {
+    cropper = new Cropper(document.getElementById('imageToCrop'), {
+      aspectRatio: $(this).data('aspect'),
+      viewMode: 1,
+      preview: '#cropPreview'
+    });
+  }).on('hidden.bs.modal', function() {
+    if(cropper) cropper.destroy();
+  });
+
+  $('#btnApplyCrop').on('click', function() {
+    const data = cropper.getData();
+    $(`#${activePrefix}_x`).val(Math.round(data.x));
+    $(`#${activePrefix}_y`).val(Math.round(data.y));
+    $(`#${activePrefix}_w`).val(Math.round(data.width));
+    $(`#${activePrefix}_h`).val(Math.round(data.height));
+    
+    // Update the sidebar preview instantly
+    const canvas = cropper.getCroppedCanvas();
+    const targetImg = activePrefix === 'crop' ? '#current-profile-preview' : '#current-sign-preview';
+    $(targetImg).attr('src', canvas.toDataURL());
+    
+    $('#cropperModal').modal('hide');
+  });
+});
 </script>
 {% endblock %}

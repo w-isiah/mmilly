@@ -546,7 +546,7 @@ def edit_user(id):
     with get_db_connection() as connection:
         with connection.cursor(dictionary=True) as cursor:
 
-            # Fetch user for both GET and default values on POST
+            # 1. Fetch current user data (Crucial for "holding" old values)
             cursor.execute("SELECT * FROM users WHERE id = %s", (id,))
             user = cursor.fetchone()
 
@@ -556,31 +556,48 @@ def edit_user(id):
 
             if request.method == 'POST':
                 try:
-                    # Get form inputs
+                    # Get basic form inputs
                     username = request.form.get('username')
                     first_name = request.form.get('first_name')
                     last_name = request.form.get('last_name')
                     other_name = request.form.get('other_name')
-                    name_sf = request.form.get('name_sf')  # New field added
+                    name_sf = request.form.get('name_sf')
                     password = request.form.get('password')
                     role = request.form.get('role')
-                    role1 = request.form.get('role1') or None
-                    profile_image = request.files.get('profile_image')
-                    sign_image = request.files.get('sign_image')
+                    role1 = request.form.get('role1')
 
                     # Normalize role1
-                    if role1 in ('None', ''):
+                    if role1 in ('None', '', None):
                         role1 = None
 
                     # Use existing password if blank
                     if not password:
-                        password = get_user_password(cursor, id)
+                        password = user['password'] # Hold the old password
+                    else:
+                        # If you use hashing, hash it here: password = hash_pass(password)
+                        pass
 
-                    # Handle image upload (or keep existing)
-                    profile_image_path = handle_profile_image(cursor, profile_image, id)
-                    sign_image_path = handle_sign_image(cursor, sign_image, id)
+                    # 2. IMAGE HANDLING: Only process if a NEW file is uploaded
+                    new_profile_file = request.files.get('profile_image')
+                    new_sign_file = request.files.get('sign_image')
 
-                    # Update user in DB including name_sf
+                    # Profile Image Logic
+                    if new_profile_file and new_profile_file.filename != '':
+                        # A new file was selected, process and crop it
+                        profile_image_path = handle_profile_image(cursor, new_profile_file, id)
+                    else:
+                        # NO new file, HOLD the old one
+                        profile_image_path = user['profile_image']
+
+                    # Signature Image Logic
+                    if new_sign_file and new_sign_file.filename != '':
+                        # A new file was selected, process and crop it
+                        sign_image_path = handle_sign_image(cursor, new_sign_file, id)
+                    else:
+                        # NO new file, HOLD the old one
+                        sign_image_path = user['sign_image']
+
+                    # 3. Update database
                     cursor.execute(''' 
                         UPDATE users 
                         SET username = %s, first_name = %s, last_name = %s, other_name = %s,
@@ -591,19 +608,18 @@ def edit_user(id):
                         username, first_name, last_name, other_name, name_sf,
                         password, role, role1, profile_image_path, sign_image_path, id
                     ))
+                    
                     connection.commit()
-
                     flash("User updated successfully!", "success")
                     return redirect(url_for("authentication_blueprint.manage_users"))
 
                 except Exception as e:
+                    connection.rollback()
                     flash(f"Error updating user: {str(e)}", "danger")
                     return redirect(url_for("authentication_blueprint.edit_user", id=id))
 
             # GET request – render edit form
             return render_template("accounts/edit_user.html", user=user)
-
-
 
 
 
