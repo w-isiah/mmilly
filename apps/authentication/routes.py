@@ -609,24 +609,38 @@ def edit_user(id):
 
 
 
-def handle_sign_image(cursor, sign_image, user_id):
-    # Check if a signature image is provided and is a valid file type
-    if sign_image and allowed_file(sign_image.filename):
-        filename = secure_filename(sign_image.filename)
+from PIL import Image
+import os
+import time
+
+def handle_profile_image(cursor, profile_image, user_id=None):
+    if profile_image and allowed_file(profile_image.filename):
+        # Create a unique filename if no user_id exists yet
+        if user_id:
+            filename = f"user_{user_id}_{int(time.time())}.png"
+        else:
+            filename = f"new_user_{int(time.time())}.png"
+            
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         
-        # Save the signature image to the specified upload folder
-        sign_image.save(file_path)
-        
-        # Return the filename to save in the database
+        img = Image.open(profile_image)
+
+        # Get crop coordinates from form
+        try:
+            x = float(request.form.get('crop_x', 0))
+            y = float(request.form.get('crop_y', 0))
+            w = float(request.form.get('crop_w', 0))
+            h = float(request.form.get('crop_h', 0))
+
+            if w > 0 and h > 0:
+                img = img.crop((x, y, x + w, y + h))
+        except (ValueError, TypeError):
+            pass
+
+        img.save(file_path)
         return filename
-    else:
-        # If no new signature image, fetch the existing one from the DB
-        cursor.execute('SELECT sign_image FROM users WHERE id = %s', (user_id,))
-        result = cursor.fetchone()
-        
-        # Return the existing signature image filename or None if not found
-        return result['sign_image'] if result else None
+    return None
+
 
 
 
@@ -637,48 +651,37 @@ def handle_sign_image(cursor, sign_image, user_id):
 
 from PIL import Image
 import os
+import time
 from flask import request, current_app
-from werkzeug.utils import secure_filename
 
-def handle_profile_image(cursor, profile_image, user_id):
-    # Check if a profile image is provided and it's a valid file type
-    if profile_image and allowed_file(profile_image.filename):
-        # 1. Secure the filename
-        filename = secure_filename(profile_image.filename)
+def handle_sign_image(cursor, sign_image, user_id=None):
+    if sign_image and allowed_file(sign_image.filename):
+        # Create a unique filename
+        timestamp = int(time.time())
+        filename = f"sign_{user_id if user_id else 'new'}_{timestamp}.png"
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         
-        # 2. Open the image using Pillow
-        img = Image.open(profile_image)
+        # Open with Pillow
+        img = Image.open(sign_image)
 
-        # 3. Get crop coordinates from the form (sent via JS/Hidden Inputs)
+        # Get SIGNATURE specific coordinates from the form
         try:
-            # These names must match the 'name' attribute in your HTML inputs
-            x = float(request.form.get('crop_x', 0))
-            y = float(request.form.get('crop_y', 0))
-            w = float(request.form.get('crop_w', 0))
-            h = float(request.form.get('crop_h', 0))
+            x = float(request.form.get('sign_x', 0))
+            y = float(request.form.get('sign_y', 0))
+            w = float(request.form.get('sign_w', 0))
+            h = float(request.form.get('sign_h', 0))
 
-            # Only crop if we actually have dimensions to work with
             if w > 0 and h > 0:
-                # Pillow uses (left, top, right, bottom)
+                # Crop the image: (left, top, right, bottom)
                 img = img.crop((x, y, x + w, y + h))
         except (ValueError, TypeError):
-            # If coordinates are missing or invalid, we just save the full image
-            pass
+            pass # Save original if coordinates fail
 
-        # 4. Optional: Force a standard size (e.g., 400x400) for UI consistency
-        # img = img.resize((400, 400), Image.LANCZOS)
-        
-        # 5. Save the processed image
-        img.save(file_path)
-        
+        # Save as PNG to preserve transparency if it exists
+        img.save(file_path, "PNG")
         return filename
     
-    else:
-        # If no new image, fetch the existing profile image from the DB
-        cursor.execute('SELECT profile_image FROM users WHERE id = %s', (user_id,))
-        result = cursor.fetchone()
-        return result['profile_image'] if result else None
+    return None
 
 
 

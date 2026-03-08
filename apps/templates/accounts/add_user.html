@@ -8,28 +8,24 @@
   <link rel="stylesheet" href="/static/assets/plugins/fontawesome-free/css/all.min.css">
   <link rel="stylesheet" href="/static/assets/plugins/select2/css/select2.min.css">
   <link rel="stylesheet" href="/static/assets/css/adminlte.min.css">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  
   <style>
-    .alert-container {
-      position: fixed;
-      top: 25px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      width: 100%;
-      max-width: 500px;
-    }
-    .form-section-title {
-      border-bottom: 1px solid #eee;
-      padding-bottom: 8px;
-      margin-bottom: 20px;
-      color: #6f42c1;
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-    }
-    .custom-file-label::after {
-      content: "Browse";
-    }
+    .form-section-title { border-bottom: 2px solid #6f42c1; padding-bottom: 5px; margin-bottom: 20px; color: #6f42c1; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; }
+    
+    /* Cropping Workspace Styling */
+    .img-container { min-height: 300px; max-height: 500px; width: 100%; background-color: #ebebeb; }
+    .img-container img { max-width: 100%; }
+    
+    /* Crop Preview Shapes */
+    .preview-wrapper { overflow: hidden; border: 1px solid #ccc; background: #fff; margin: 0 auto; }
+    .preview-profile { width: 160px; height: 160px; border-radius: 50%; }
+    .preview-sign { width: 240px; height: 80px; }
+
+    /* Static Form Previews */
+    .profile-img-preview { width: 150px; height: 150px; object-fit: cover; }
+    .sign-img-preview { max-height: 70px; object-fit: contain; }
   </style>
 {% endblock %}
 
@@ -37,194 +33,188 @@
 <div class="content-wrapper">
   <section class="content-header">
     <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1 class="text-bold"><i class="fas fa-user-shield mr-2"></i>Create System Account</h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="/index">Home</a></li>
-            <li class="breadcrumb-item"><a href="/manage_users">User Registry</a></li>
-            <li class="breadcrumb-item active">New User</li>
-          </ol>
-        </div>
-      </div>
+        <h1 class="text-bold"><i class="fas fa-user-plus mr-2 text-purple"></i>Register New Account</h1>
     </div>
   </section>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="alert-container" id="flashMessageContainer">
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-lg" role="alert">
-            <i class="fas fa-info-circle mr-2"></i> {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-
   <section class="content">
     <div class="container-fluid">
-      <div class="row justify-content-center">
-        <div class="col-md-10">
-          <div class="card card-outline card-purple shadow-sm">
+      <div class="row">
+        
+        <div class="col-md-3">
+          <div class="card card-purple card-outline shadow-sm">
+            <div class="card-body text-center">
+              <label>Profile Image</label>
+              <div class="mb-3">
+                <img id="main-profile-view" src="/static/assets/img/default-avatar.png" 
+                     class="img-circle img-fluid shadow border profile-img-preview">
+              </div>
+              
+              <hr>
+              
+              <label>Signature Preview</label>
+              <div class="border p-2 bg-light">
+                <img id="main-sign-view" src="/static/assets/img/no-sign.png" 
+                     class="img-fluid sign-img-preview">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-9">
+          <div class="card shadow-sm">
             <form action="{{ url_for('authentication_blueprint.add_user') }}" method="POST" enctype="multipart/form-data" id="addUserForm">
               <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
+              <input type="hidden" name="crop_x" id="crop_x"> <input type="hidden" name="crop_y" id="crop_y">
+              <input type="hidden" name="crop_w" id="crop_w"> <input type="hidden" name="crop_h" id="crop_h">
+              
+              <input type="hidden" name="sign_x" id="sign_x"> <input type="hidden" name="sign_y" id="sign_y">
+              <input type="hidden" name="sign_w" id="sign_w"> <input type="hidden" name="sign_h" id="sign_h">
+
               <div class="card-body">
                 <div class="row">
-                  
                   <div class="col-md-6 border-right">
-                    <h6 class="form-section-title"><i class="fas fa-id-card mr-2"></i>Personal Information</h6>
-                    
+                    <h6 class="form-section-title">Personal Information</h6>
                     <div class="form-group">
-                      <label>First Name <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control" name="first_name" required placeholder="e.g. John">
+                        <label>First Name</label>
+                        <input type="text" class="form-control" name="first_name" required>
                     </div>
-
                     <div class="form-group">
-                      <label>Last Name <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control" name="last_name" required placeholder="e.g. Doe">
+                        <label>Last Name</label>
+                        <input type="text" class="form-control" name="last_name" required>
                     </div>
 
-                    <div class="row">
-                      <div class="col-6">
-                        <div class="form-group">
-                          <label>Other Name</label>
-                          <input type="text" class="form-control" name="other_name">
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="form-group">
-                          <label>Short Name (SF)</label>
-                          <input type="text" class="form-control" name="name_sf" placeholder="Initials">
-                        </div>
-                      </div>
-                    </div>
-
-                    <h6 class="form-section-title mt-4"><i class="fas fa-camera mr-2"></i>Media Assets</h6>
+                    <h6 class="form-section-title mt-4">Uploads</h6>
                     <div class="form-group">
                       <label>Profile Photo</label>
                       <div class="custom-file">
-                        <input type="file" class="custom-file-input" id="profile_image" name="profile_image" accept="image/*">
-                        <label class="custom-file-label" for="profile_image">Choose file</label>
+                        <input type="file" class="custom-file-input crop-trigger" name="profile_image" accept="image/*" 
+                               data-aspect="1" data-prefix="crop" data-preview="preview-profile" data-view="main-profile-view">
+                        <label class="custom-file-label">Choose photo</label>
                       </div>
                     </div>
                     <div class="form-group">
-                      <label>Digital Signature</label>
+                      <label>Signature Image</label>
                       <div class="custom-file">
-                        <input type="file" class="custom-file-input" id="sign_image" name="sign_image" accept="image/*">
-                        <label class="custom-file-label" for="sign_image">Choose file</label>
+                        <input type="file" class="custom-file-input crop-trigger" name="sign_image" accept="image/*" 
+                               data-aspect="3" data-prefix="sign" data-preview="preview-sign" data-view="main-sign-view">
+                        <label class="custom-file-label">Choose signature</label>
                       </div>
                     </div>
                   </div>
 
                   <div class="col-md-6">
-                    <h6 class="form-section-title"><i class="fas fa-lock mr-2"></i>Account Security</h6>
-                    
+                    <h6 class="form-section-title">Account Access</h6>
                     <div class="form-group">
-                      <label>Username <span class="text-danger">*</span></label>
-                      <div class="input-group">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text bg-light"><i class="fas fa-at"></i></span>
-                        </div>
-                        <input type="text" class="form-control" name="username" required 
-                               pattern="^[a-zA-Z0-9_]{3,20}$" placeholder="Unique username">
-                      </div>
+                        <label>Username</label>
+                        <input type="text" class="form-control" name="username" required>
                     </div>
-
                     <div class="form-group">
-                      <label>System Role <span class="text-danger">*</span></label>
-                      <select class="form-control select2 w-100" name="role" required>
-                        <option value="" selected disabled>Assign a role...</option>
-                        {% if session['role'] in ['admin', 'super_admin'] %}
-                          <option value="admin">Administrator</option>
-                          <option value="director">Director</option>
-                          <option value="Head_ICT">Head of ICT</option>
-                          <option value="co_ordinator">Coordinator</option>
-                        {% endif %}
-                        <option value="other">Staff / Other</option>
-                      </select>
+                        <label>Password</label>
+                        <input type="password" class="form-control" name="password" required>
                     </div>
-
                     <div class="form-group">
-                      <label>Password <span class="text-danger">*</span></label>
-                      <input type="password" class="form-control" name="password" id="password" required minlength="8" placeholder="Min. 8 characters">
-                    </div>
-
-                    <div class="form-group">
-                      <label>Confirm Password <span class="text-danger">*</span></label>
-                      <input type="password" class="form-control" id="confirm_password" required placeholder="Repeat password">
-                      <div class="invalid-feedback">Passwords do not match.</div>
-                    </div>
-
-                    <div class="custom-control custom-switch mt-3">
-                      <input type="checkbox" class="custom-control-input" id="showPasswordSwitch">
-                      <label class="custom-control-label font-weight-normal" for="showPasswordSwitch">Show characters</label>
+                        <label>User Role</label>
+                        <select class="form-control select2" name="role">
+                            <option value="other">Staff</option>
+                            <option value="admin">Administrator</option>
+                        </select>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <div class="card-footer bg-light text-right">
-                <a href="/manage_users" class="btn btn-link text-muted mr-3">Cancel and go back</a>
-                <button type="submit" class="btn btn-primary elevation-2">
-                  <i class="fas fa-user-check mr-1"></i> Create User Account
-                </button>
+              <div class="card-footer text-right">
+                <button type="submit" class="btn btn-primary px-5 shadow-sm">Create User</button>
               </div>
             </form>
           </div>
         </div>
+
       </div>
     </div>
   </section>
+</div>
+
+<div class="modal fade" id="cropModal" data-backdrop="static" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-purple text-white">
+        <h5 class="modal-title"><i class="fas fa-crop-alt mr-2"></i>Adjust Image Area</h5>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-8 border-right">
+            <div class="img-container"><img id="imageToCrop" src=""></div>
+          </div>
+          <div class="col-md-4 text-center">
+            <h6 class="text-bold">Live Preview</h6>
+            <div id="cropPreview" class="preview-wrapper mt-3"></div>
+            <p class="text-muted small mt-2">Adjust the selection to fit.</p>
+            <button type="button" class="btn btn-success btn-block mt-5" id="btnApplyCrop">Confirm Selection</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block javascripts %}
   <script src="/static/assets/plugins/jquery/jquery.min.js"></script>
   <script src="/static/assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/assets/plugins/select2/js/select2.full.min.js"></script>
   <script src="/static/assets/plugins/bs-custom-file-input/bs-custom-file-input.min.js"></script>
-  <script src="/static/assets/js/adminlte.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
   <script>
     $(function () {
-      // Initialize Select2 and Custom File Input
-      $('.select2').select2({ theme: 'bootstrap4' });
       bsCustomFileInput.init();
+      let cropper;
+      let activePrefix, activeView;
+      const $cropModal = $('#cropModal');
 
-      // Flash Message Fade
-      if ($('#flashMessageContainer').length) {
-        $('#flashMessageContainer').delay(4000).fadeOut(1000);
-      }
+      // Trigger Cropper on Selection
+      $('.crop-trigger').on('change', function(e) {
+        const file = e.target.files[0];
+        activePrefix = $(this).data('prefix');
+        activeView = $(this).data('view');
+        const aspect = $(this).data('aspect');
+        const previewClass = $(this).data('preview');
 
-      // Password Visibility Toggle
-      $('#showPasswordSwitch').on('change', function () {
-        const type = this.checked ? 'text' : 'password';
-        $('#password, #confirm_password').attr('type', type);
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            document.getElementById('imageToCrop').src = event.target.result;
+            document.getElementById('cropPreview').className = 'preview-wrapper ' + previewClass;
+            $cropModal.data('aspect', aspect).modal('show');
+          };
+          reader.readAsDataURL(file);
+        }
       });
 
-      // Client-side Password Match Check
-      const password = document.getElementById("password");
-      const confirm_password = document.getElementById("confirm_password");
+      $cropModal.on('shown.bs.modal', function() {
+        cropper = new Cropper(document.getElementById('imageToCrop'), {
+          aspectRatio: $(this).data('aspect'),
+          viewMode: 1,
+          preview: '#cropPreview'
+        });
+      }).on('hidden.bs.modal', function() {
+        cropper.destroy();
+      });
 
-      function validatePassword(){
-        if(password.value != confirm_password.value) {
-          confirm_password.setCustomValidity("Passwords Don't Match");
-          $(confirm_password).addClass('is-invalid');
-        } else {
-          confirm_password.setCustomValidity('');
-          $(confirm_password).removeClass('is-invalid');
-        }
-      }
-
-      password.onchange = validatePassword;
-      confirm_password.onkeyup = validatePassword;
+      $('#btnApplyCrop').on('click', function() {
+        const data = cropper.getData();
+        document.getElementById(activePrefix + '_x').value = Math.round(data.x);
+        document.getElementById(activePrefix + '_y').value = Math.round(data.y);
+        document.getElementById(activePrefix + '_w').value = Math.round(data.width);
+        document.getElementById(activePrefix + '_h').value = Math.round(data.height);
+        
+        // Update the form's small preview
+        const canvas = cropper.getCroppedCanvas();
+        document.getElementById(activeView).src = canvas.toDataURL();
+        
+        $cropModal.modal('hide');
+      });
     });
   </script>
 {% endblock %}

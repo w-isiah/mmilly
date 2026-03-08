@@ -14,6 +14,12 @@
     height: 120px;
     object-fit: cover;
     border: 3px solid #adb5bd;
+    cursor: pointer; /* Indicates it's clickable */
+    transition: transform 0.2s;
+  }
+  .profile-user-img-edit:hover {
+    transform: scale(1.05);
+    filter: brightness(90%);
   }
   .form-section-header {
     font-weight: 700;
@@ -59,6 +65,7 @@
             <div class="card-body text-center">
               <img class="profile-user-img img-fluid img-circle profile-user-img-edit" 
                    id="current-profile-preview"
+                   title="Click to view full size"
                    src="{{ url_for('static', filename='uploads/' + user.profile_image) if user.profile_image else url_for('static', filename='assets/img/default-avatar.png') }}">
               <h3 class="mt-3">{{ user.first_name }} {{ user.last_name }}</h3>
               <p class="text-muted">{{ user.role }}</p>
@@ -125,11 +132,11 @@
   </section>
 </div>
 
-<div class="modal fade" id="cropperModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+<div class="modal fade" id="cropperModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalLabel">Crop your profile picture</h5>
+        <h5 class="modal-title">Crop your profile picture</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -156,6 +163,21 @@
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="viewerModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content bg-transparent border-0">
+      <div class="modal-body text-center p-0">
+        <img id="full-size-view" src="" class="img-fluid rounded shadow-lg" style="max-height: 80vh;">
+        <div class="mt-3">
+          <button type="button" class="btn btn-light btn-circle" data-dismiss="modal">
+            <i class="fas fa-times"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -170,6 +192,14 @@
     const imageInput = document.getElementById('imageInput');
     const imageToCrop = document.getElementById('imageToCrop');
     const $modal = $('#cropperModal');
+    const $viewerModal = $('#viewerModal');
+
+    // Lightbox Logic: Open viewer when clicking the profile image
+    $('#current-profile-preview').on('click', function() {
+      const currentSrc = $(this).attr('src');
+      $('#full-size-view').attr('src', currentSrc);
+      $viewerModal.modal('show');
+    });
 
     // Handle file selection
     imageInput.addEventListener('change', function (e) {
@@ -196,13 +226,14 @@
         preview: '.img-preview'
       });
     }).on('hidden.bs.modal', function () {
-      cropper.destroy();
-      cropper = null;
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
     });
 
     // Save crop coordinates on "Apply Crop"
     document.getElementById('saveCrop').addEventListener('click', function () {
-      const canvas = cropper.getCanvasData();
       const data = cropper.getData();
       
       // Set hidden inputs
@@ -211,7 +242,7 @@
       document.getElementById('crop_w').value = Math.round(data.width);
       document.getElementById('crop_h').value = Math.round(data.height);
 
-      // Optional: Show cropped preview in the main profile page
+      // Show cropped preview in the main profile page immediately
       const croppedCanvas = cropper.getCroppedCanvas({ width: 160, height: 160 });
       document.getElementById('current-profile-preview').src = croppedCanvas.toDataURL();
 
