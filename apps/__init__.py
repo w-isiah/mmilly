@@ -69,7 +69,7 @@ def register_blueprints(app):
     modules = [
         'authentication', 'church','home','password_reset','pwd',
         'lay_reader','coordinators','disability_types','archdeaconries',
-        'dioceses','parishes','clergy'
+        'dioceses','parishes','clergy','mission_coordinators'
     ]
 
     for module_name in modules:

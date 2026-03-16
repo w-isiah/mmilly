@@ -26,7 +26,7 @@
         {% endif %}
       </div>
       <div class="info">
-        <a href="{{ url_for('authentication_blueprint.edit_user_profile', id=session['id']) }}" 
+        <a href="{{ url_for('authentication_blueprint.edit_user_profile', id=session.get('id')) }}"
         class="d-block" title="View Profile">
         <i class="fas fa-user-circle mr-1"></i>
         {{ session.get('first_name', 'User') }} {{ session.get('last_name', '') }}
@@ -89,6 +89,16 @@
                 <p>Coordinators</p>
             </a>
         </li>
+
+
+        <li class="nav-item">
+            <a href="/manage_mission_coordinators" class="nav-link {% if segment == 'manage_mission_coordinators' %}active{% endif %}">
+                <i class="nav-icon fas fa-user-shield text-warning"></i>
+                <p>Mission Coordinators</p>
+            </a>
+        </li>
+
+
 
         <li class="nav-header text-uppercase small opacity-50 ml-3 mt-2">Ecclesiastical Structure</li>
 

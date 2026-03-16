@@ -8,21 +8,7 @@
 
   {% if session.get('role') == 'super_admin' %}
 
-  <!-- Flash messages -->
-  <div class="container-fluid mt-3">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-  </div>
+
 
   <!-- Header -->
   <div class="content-header">

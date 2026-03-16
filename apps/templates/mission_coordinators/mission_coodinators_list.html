@@ -1,0 +1,326 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Mission Coordinator Registry {% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row align-items-center mb-4">
+                <div class="col-md-6">
+                    <h1 class="m-0 text-dark font-weight-bold">
+                        <i class="fas fa-hand-holding-heart mr-2 text-purple"></i>Mission Coordinators
+                    </h1>
+                    <p class="text-muted mb-0">Centralized Outreach & Evangelism Leadership</p>
+                </div>
+                <div class="col-md-6 text-md-right mt-3 mt-md-0">
+                    <div class="input-group input-group-sm d-inline-flex shadow-sm mr-2" style="width: 250px;">
+                        <input type="text" id="tableSearch" class="form-control border-right-0" placeholder="Search staff...">
+                        <div class="input-group-append">
+                            <span class="input-group-text bg-white border-left-0"><i class="fas fa-search text-muted"></i></span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-purple btn-sm shadow-sm px-3" data-toggle="modal" data-target="#addCoordModal">
+                        <i class="fas fa-plus-circle mr-1"></i> Register New
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="info-box shadow-sm border-left border-purple">
+                        <span class="info-box-icon bg-purple-light text-purple"><i class="fas fa-users"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text text-muted small uppercase font-weight-bold">Total Registry</span>
+                            <span class="info-box-number h5 mb-0">{{ stats.total_staff }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-box shadow-sm border-left border-success">
+                        <span class="info-box-icon bg-success-light text-success"><i class="fas fa-user-check"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text text-muted small uppercase font-weight-bold">Active Agents</span>
+                            <span class="info-box-number h5 mb-0">{{ stats.active_staff }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="card card-outline card-purple shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="coordTable">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="pl-4">Coordinator Details</th>
+                                    <th>Assigned Station</th>
+                                    <th>Contact Details</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-right pr-4">Management</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for coord in coordinators %}
+                                <tr>
+                                    <td class="pl-4">
+                                        <div class="font-weight-bold mb-0">
+                                            {% if coord.Title %}<span class="text-muted font-weight-normal small">{{ coord.Title }}</span>{% endif %}
+                                            {{ coord.FirstName }} {{ coord.LastName }}
+                                        </div>
+                                        <span class="badge {% if coord.Position == 'Coordinator' %}badge-purple{% else %}badge-light border{% endif %} extra-small">
+                                            {{ coord.Position }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if coord.parish_id %}
+                                            <div class="small font-weight-bold text-purple"><i class="fas fa-landmark mr-1"></i>{{ coord.parish_name }}</div>
+                                            <span class="text-xs text-muted">Parish Level</span>
+                                        {% elif coord.church_id %}
+                                            <div class="small font-weight-bold text-info"><i class="fas fa-church mr-1"></i>{{ coord.church_name }}</div>
+                                            <span class="text-xs text-muted">Local Church</span>
+                                        {% else %}
+                                            <span class="text-muted small italic"><i class="fas fa-exclamation-triangle text-warning mr-1"></i>Unassigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="text-sm"><i class="fas fa-phone mr-1 text-muted text-xs"></i>{{ coord.PhoneNumber }}</div>
+                                        <div class="text-xs text-muted"><i class="fas fa-envelope mr-1"></i>{{ coord.Email or 'No Email' }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if coord.IsActive %}
+                                            <span class="badge badge-success-light text-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Active</span>
+                                        {% else %}
+                                            <span class="badge badge-light text-muted px-2 py-1 italic">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-right pr-4">
+                                        <div class="btn-group shadow-sm">
+                                            <button class="btn btn-sm btn-white border text-purple" title="Assign Station" data-toggle="modal" data-target="#assignModal{{ coord.CoordinatorID }}">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-white border text-info" title="Edit Profile" data-toggle="modal" data-target="#editModal{{ coord.CoordinatorID }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fas fa-users-slash fa-3x mb-3 d-block opacity-50"></i>
+                                        No coordinators registered yet.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="addCoordModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('mission_coordinators_blueprint.add_mission_coordinator') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-purple text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>Mission Staff Registration</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-2 form-group">
+                            <label class="small font-weight-bold uppercase">Title</label>
+                            <input type="text" name="Title" class="form-control" placeholder="Mr/Rev">
+                        </div>
+                        <div class="col-md-5 form-group">
+                            <label class="small font-weight-bold uppercase">First Name *</label>
+                            <input type="text" name="FirstName" class="form-control" required>
+                        </div>
+                        <div class="col-md-5 form-group">
+                            <label class="small font-weight-bold uppercase">Last Name *</label>
+                            <input type="text" name="LastName" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold uppercase">Primary Phone *</label>
+                            <input type="text" name="PhoneNumber" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold uppercase">Email Address</label>
+                            <input type="email" name="Email" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold uppercase">Role Position</label>
+                            <select name="Position" class="form-control custom-select">
+                                {% for pos in positions %}
+                                <option value="{{ pos }}">{{ pos }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold uppercase">Join Date</label>
+                            <input type="date" name="DateJoined" class="form-control" value="{{ current_date }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="submit" class="btn btn-purple px-4">Create Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for coord in coordinators %}
+<div class="modal fade" id="assignModal{{ coord.CoordinatorID }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('mission_coordinators_blueprint.assign_mission_coordinator', coord_id=coord.CoordinatorID) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-dark text-white">
+                    <h6 class="modal-title"><i class="fas fa-map-marker-alt mr-2"></i>Assignment: {{ coord.FirstName }}</h6>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="small font-weight-bold d-block mb-2 uppercase">Station Level</label>
+                    <select name="assignment_type" class="form-control mb-3" onchange="toggleAssignment({{ coord.CoordinatorID }}, this.value)">
+                        <option value="none">❌ Unassigned / Clear</option>
+                        <option value="parish" {% if coord.parish_id %}selected{% endif %}>🏛️ Parish Assignment</option>
+                        <option value="church" {% if coord.church_id %}selected{% endif %}>⛪ Local Church Assignment</option>
+                    </select>
+
+                    <div id="p_box{{ coord.CoordinatorID }}" style="display: {% if coord.parish_id %}block{% else %}none{% endif %};">
+                        <label class="small font-weight-bold d-block text-purple uppercase">Select Parish</label>
+                        <select name="assigned_id" class="form-control border-purple" {% if not coord.parish_id %}disabled{% endif %}>
+                            {% for p in parishes %}
+                            <option value="{{ p.id }}" {% if coord.parish_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div id="c_box{{ coord.CoordinatorID }}" style="display: {% if coord.church_id %}block{% else %}none{% endif %};">
+                        <label class="small font-weight-bold d-block text-info uppercase">Select Church</label>
+                        <select name="assigned_id" class="form-control border-info" {% if not coord.church_id %}disabled{% endif %}>
+                            {% for c in churches %}
+                            <option value="{{ c.id }}" {% if coord.church_id == c.id %}selected{% endif %}>{{ c.church_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer p-2">
+                    <button type="submit" class="btn btn-purple btn-block">Confirm Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal{{ coord.CoordinatorID }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('mission_coordinators_blueprint.edit_mission_coordinator', coord_id=coord.CoordinatorID) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-edit mr-2"></i>Edit: {{ coord.FirstName }} {{ coord.LastName }}</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold uppercase">First Name</label>
+                            <input type="text" name="FirstName" class="form-control" value="{{ coord.FirstName }}" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold uppercase">Last Name</label>
+                            <input type="text" name="LastName" class="form-control" value="{{ coord.LastName }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold uppercase">Phone Number</label>
+                            <input type="text" name="PhoneNumber" class="form-control" value="{{ coord.PhoneNumber }}" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="small font-weight-bold uppercase">Account Status</label>
+                            <div class="custom-control custom-switch mt-2">
+                                <input type="checkbox" name="IsActive" class="custom-control-input" id="activeSwitch{{ coord.CoordinatorID }}" {% if coord.IsActive %}checked{% endif %}>
+                                <label class="custom-control-label" for="activeSwitch{{ coord.CoordinatorID }}">Active in Registry</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold uppercase">Admin Notes</label>
+                        <textarea name="Notes" class="form-control" rows="2">{{ coord.Notes }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-info btn-sm px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+    .text-purple { color: #6f42c1 !important; }
+    .bg-purple { background-color: #6f42c1 !important; }
+    .bg-purple-light { background-color: #f3effb !important; }
+    .bg-success-light { background-color: #e8f5e9 !important; }
+    .btn-purple { background-color: #6f42c1; color: white; transition: 0.3s; }
+    .btn-purple:hover { background-color: #5a32a3; color: white; transform: translateY(-1px); }
+    .card-purple.card-outline { border-top: 3px solid #6f42c1; }
+    .badge-purple { background-color: #6f42c1; color: white; }
+    .badge-success-light { background-color: #d4edda; color: #155724; }
+    .extra-small { font-size: 0.65rem; text-transform: uppercase; padding: 2px 6px; letter-spacing: 0.5px; }
+    .italic { font-style: italic; }
+    .uppercase { text-transform: uppercase; }
+    .btn-white { background-color: #fff; }
+</style>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    $(document).ready(function(){
+        // Instant Search Logic
+        $("#tableSearch").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            $("#coordTable tbody tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    });
+
+    // Toggle between Parish and Church dropdowns in Assignment Modal
+    function toggleAssignment(id, mode) {
+        const pBox = document.getElementById('p_box' + id);
+        const cBox = document.getElementById('c_box' + id);
+        
+        // Hide all and disable selects to prevent wrong data submission
+        [pBox, cBox].forEach(el => {
+            el.style.display = 'none';
+            el.querySelector('select').disabled = true;
+        });
+
+        if (mode === 'parish') {
+            pBox.style.display = 'block';
+            pBox.querySelector('select').disabled = false;
+        } else if (mode === 'church') {
+            cBox.style.display = 'block';
+            cBox.querySelector('select').disabled = false;
+        }
+    }
+</script>
+{% endblock %}
