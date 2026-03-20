@@ -19,7 +19,6 @@ def clean_form_data(form_dict):
     return {k: (v.strip() if v and isinstance(v, str) else v) for k, v in form_dict.items()}
 
 # --- Routes ---
-
 @blueprint.route('/manage_mission_coordinators')
 @login_required
 def manage_mission_coordinators():
@@ -28,17 +27,8 @@ def manage_mission_coordinators():
         with get_db_connection() as conn:
             with conn.cursor(dictionary=True) as cursor:
                 
-                # 1. Fetch Metrics
-                cursor.execute('''
-                    SELECT 
-                        COUNT(CoordinatorID) as total_staff,
-                        COALESCE(SUM(CASE WHEN IsActive = 1 THEN 1 ELSE 0 END), 0) as active_staff,
-                        COALESCE(SUM(CASE WHEN Position = 'Coordinator' THEN 1 ELSE 0 END), 0) as lead_coordinators
-                    FROM mission_coordinator
-                ''')
-                stats = cursor.fetchone()
-
-                # 2. Fetch Detailed List
+                # 1. Fetch Detailed List with Station Info
+                # This stays because it populates your main table
                 cursor.execute('''
                     SELECT 
                         mc.*, 
@@ -51,7 +41,7 @@ def manage_mission_coordinators():
                 ''')
                 coordinators = cursor.fetchall()
 
-                # 3. Dropdown Data
+                # 2. Fetch Dropdown Data for the Modals
                 cursor.execute('SELECT id, church_name FROM church WHERE is_active = 1 ORDER BY church_name')
                 churches = cursor.fetchall()
                 
@@ -60,7 +50,6 @@ def manage_mission_coordinators():
 
         return render_template(
             'mission_Coordinators/mission_coodinators_list.html',
-            stats=stats,
             coordinators=coordinators,
             churches=churches,
             parishes=parishes,
@@ -69,7 +58,9 @@ def manage_mission_coordinators():
             current_date=get_kampala_time().date()
         )
     except Exception as e:
-        flash(f"System Error: {str(e)}", "danger")
+        # Logging the error is helpful for debugging later
+        print(f"Error in manage_mission_coordinators: {e}")
+        flash("System Error: Could not load coordinator registry.", "danger")
         return redirect(url_for('home_blueprint.index'))
 
 
